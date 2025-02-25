@@ -1,35 +1,68 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import { useForm } from "react-hook-form"
+
+import { toast } from "sonner"
+import {
+  Form,
+} from "@/components/ui/form"
+import Selector from './components/Selector'
+
+function onSubmit() {
+  toast("Event has been created", {
+    description: "Sunday, December 03, 2023 at 9:00 AM",
+    action: {
+      label: "Undo",
+      onClick: () => console.log("Undo"),
+    },
+  })
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [] = useState(0)
+  const form = useForm()
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1 className="text-2xl font-bold underline">
-    Hello world!
-  </h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="w-auto space-y-6">
+            <div className="flex gap-20 flex-wrap justify-center">
+              <Selector 
+                form={form}
+                options={[
+                  { value: 'all', label: 'All' },
+                  { value: 'old', label: 'Old Testament' },
+                  { value: 'new', label: 'New Testament' },
+                  { value: 'others', label: 'Others' }
+                ]}
+                formLabel="By Testament*"
+              />
+              <Selector 
+                form={form}
+                options={[
+                  { value: 'all', label: 'All' },
+                  { value: 'old', label: 'Old Testament' },
+                  { value: 'new', label: 'New Testament' },
+                  { value: 'others', label: 'Others' }
+                ]}
+                formLabel="Books"
+              />
+              <Selector 
+                form={form}
+                options={[
+                  // { value: 'all', label: 'All' },
+                  // { value: 'old', label: 'Old Testament' },
+                  // { value: 'new', label: 'New Testament' },
+                  // { value: 'others', label: 'Others' }
+                ]}
+                formLabel="Chapters"
+              />
+            </div>
+          </form>
+        </Form>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }
