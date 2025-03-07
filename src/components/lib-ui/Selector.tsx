@@ -6,8 +6,9 @@ type SelectorProps = {
     options: {value: string, label: string}[],
     description?: string,
     formLabel: string
+    onChange?: (value: string) => void
 }
-export default function Selector({ form, options, description, formLabel }: SelectorProps) {
+export default function Selector({ form, options, description, formLabel, onChange }: SelectorProps) {
   return (
     <FormField
                 control={form.control}
@@ -15,11 +16,11 @@ export default function Selector({ form, options, description, formLabel }: Sele
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{formLabel}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={onChange  ?? field.onChange} defaultValue={field.value}>
                       <SelectTrigger className='w-[280px] !border-2 border-gray-800 rounded-md'>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position='item-aligned'>
                         {options.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}

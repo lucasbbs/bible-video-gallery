@@ -7,8 +7,8 @@
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  overflow-x: hidden;
+  /* text-align: center; */
 }
 
 .logo {
@@ -163,5 +163,21 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@media (width <= 48rem) {
+  @layer components {
+    .responsive {
+      @apply flex-col;
+    }
+  }
+}
+
+@media (width <= 36rem) {
+  @layer components {
+    .xs-gap-4 {
+      @apply !gap-0;
+    }
   }
 }
