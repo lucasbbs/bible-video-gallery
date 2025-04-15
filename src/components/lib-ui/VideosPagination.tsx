@@ -72,7 +72,7 @@ export function PaginationWithLinks({
       for (let i = 1; i <= totalPageCount; i++) {
         items.push(
           <PaginationItem key={i}>
-            <PaginationLink href={buildLink(i)} isActive={page === i}>
+            <PaginationLink className="!text-black" href={buildLink(i)} isActive={page === i}>
               {i}
             </PaginationLink>
           </PaginationItem>,
@@ -81,7 +81,7 @@ export function PaginationWithLinks({
     } else {
       items.push(
         <PaginationItem key={1}>
-          <PaginationLink href={buildLink(1)} isActive={page === 1}>
+          <PaginationLink className="!text-black"  href={buildLink(1)} isActive={page === 1}>
             1
           </PaginationLink>
         </PaginationItem>,
@@ -101,7 +101,7 @@ export function PaginationWithLinks({
       for (let i = start; i <= end; i++) {
         items.push(
           <PaginationItem key={i}>
-            <PaginationLink href={buildLink(i)} isActive={page === i}>
+            <PaginationLink className="!text-black" href={buildLink(i)} isActive={page === i}>
               {i}
             </PaginationLink>
           </PaginationItem>,
@@ -118,7 +118,7 @@ export function PaginationWithLinks({
 
       items.push(
         <PaginationItem key={totalPageCount}>
-          <PaginationLink href={buildLink(totalPageCount)} isActive={page === totalPageCount}>
+          <PaginationLink className="!text-black"  href={buildLink(totalPageCount)} isActive={page === totalPageCount}>
             {totalPageCount}
           </PaginationLink>
         </PaginationItem>,
@@ -141,12 +141,12 @@ export function PaginationWithLinks({
       )}
       <Pagination className={cn({ "md:justify-end": pageSizeSelectOptions })}>
         <PaginationContent className="max-sm:gap-0">
-          <PaginationItem>
+          <PaginationItem className="">
             <PaginationPrevious
               href={buildLink(Math.max(page - 1, 1))}
               aria-disabled={page === 1}
               tabIndex={page === 1 ? -1 : undefined}
-              className={page === 1 ? "pointer-events-none opacity-50" : undefined}
+              className={page === 1 ? "pointer-events-none opacity-50 !text-black" : '!text-black'}
             />
           </PaginationItem>
           {renderPageNumbers()}
@@ -155,7 +155,7 @@ export function PaginationWithLinks({
               href={buildLink(Math.min(page + 1, totalPageCount))}
               aria-disabled={page === totalPageCount}
               tabIndex={page === totalPageCount ? -1 : undefined}
-              className={page === totalPageCount ? "pointer-events-none opacity-50" : undefined}
+              className={page === totalPageCount ? "pointer-events-none opacity-50 !text-black" : '!text-black'}
             />
           </PaginationItem>
         </PaginationContent>

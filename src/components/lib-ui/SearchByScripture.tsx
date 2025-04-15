@@ -1,7 +1,6 @@
 import { useForm } from "react-hook-form"
 import { MonitorPlay } from 'lucide-react';
 import { oldTestament, newTestament, allBooks } from '../../shared/books'
-import { toast } from "sonner"
 import {
   Form,
 } from "@/components/ui/form"
@@ -13,16 +12,6 @@ import { Button } from '../../components/ui/button';
 import { VideoModal } from '../../components/lib-ui/VideoModal';
 import { useEffect, useState } from "react";
 
-function onSubmit() {
-  toast("Event has been created", {
-    description: "Sunday, December 03, 2023 at 9:00 AM",
-    action: {
-      label: "Undo",
-      onClick: () => console.log("Undo"),
-    },
-  })
-}
-
 type Video = {
   title: string,
   name: string,
@@ -30,26 +19,50 @@ type Video = {
   chapter: number
 }
 
-function SearchByScripture() {
+type SearchByScriptureProps = {
+  setLoading: (loading: boolean) => void 
+}
+
+function SearchByScripture({ setLoading }: SearchByScriptureProps) {
       const form = useForm()
       const [chapters, setChapters] = useState<number[]>([])
       const [selectedChapter, setSelectedChapter] = useState<number>(0)
+      const [selectedBook, setSelectedBook] = useState('')
       const [books, setBooks] = useState<string[]>([])
       const [videos, setVideos] = useState<Video[]>([])
+      const [showOther, setShowOther] = useState(false)
+
+      const resetForm = (optionSelected: string[]) => {
+        form.reset()
+        setBooks(optionSelected)
+        setChapters([])
+        setSelectedBook('')
+        setSelectedChapter(0)
+        setVideos([])
+      }
     
-      const handleTestamentChange = (value: string) => {
+      const handleTestamentChange = async (value: string) => {
         if (value === 'old') {
-          setBooks(oldTestament)
+          setShowOther(false)
+          resetForm(oldTestament)
         } else if (value === 'new') {
-          setBooks(newTestament)
+          setShowOther(false)
+          resetForm(newTestament)
         } else if (value === 'all') {
-          setBooks(allBooks)
-        } else {
-          setBooks([])
+          setShowOther(false)
+          resetForm(allBooks)
+          } else {
+          setShowOther(true)
+          resetForm([])
+          setLoading(true)
+          const { data: { videos } } = await getVideos('others');
+          setVideos(videos);
+          setLoading(false)
         }
       }
     
       const handleBookChange = async (value: string) => {
+        setSelectedBook(value)
         const { data: { videos } } = await getVideos(value);
         setVideos(videos)
       }
@@ -59,19 +72,19 @@ function SearchByScripture() {
       }
     
       useEffect(() => {
-        if (videos.length) {
-          const chapters = videos.map((video: any) => video.chapter)
-          setChapters([...new Set(chapters)].sort((a, b) => a - b))
+        if (showOther) {
+          return
         }
+          const chapters = videos.map((video: any) => video.chapter)
+          console.log(chapters)
+          setChapters([...new Set(chapters)].sort((a, b) => a - b))
       }, [videos])
-    
-    
     
   return (
     <div>
               <div>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="w-auto space-y-6">
+          <form className="w-auto space-y-6">
             <div className="flex gap-20 xs-gap-4 flex-wrap justify-center">
               <Selector
                 form={form}
@@ -83,18 +96,23 @@ function SearchByScripture() {
                   { value: 'others', label: 'Others' }
                 ]}
                 formLabel="By Testament*"
+                placeholder="Select Testament"
               />
               <Selector
                 form={form}
+                value={selectedBook}
                 onChange={handleBookChange}
                 options={books.map((book) => ({ value: book, label: book }))}
                 formLabel="Books"
+                placeholder="Select Book"
               />
               <Selector
                 form={form}
+                value={selectedChapter === 0 ? "" : String(selectedChapter)}
                 onChange={(value) => handleChapterChange(parseInt(value))}
                 options={chapters.map((chapter) => ({ value: String(chapter), label: `Chapter ${chapter}` }))}
                 formLabel="Chapters"
+                placeholder="Select Chapter"
               />
             </div>
           </form>
@@ -102,7 +120,7 @@ function SearchByScripture() {
       </div>
       <div className="card relative p-10 h-2/4">
         <div className="grid gap-4">
-          {videos.filter(video => video.chapter === selectedChapter).map((video, index) => (
+          {videos.filter(video => video.chapter === selectedChapter || showOther).map((video, index) => (
             <ListItem
               key={index}
               title={video.name}
