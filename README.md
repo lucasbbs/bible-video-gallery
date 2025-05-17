@@ -5,6 +5,8 @@
 
 A modern, responsive video gallery showcasing Bible-related content. This app allows users to browse, search, and view scripture-based videos in an elegant UI powered by React, Tailwind CSS, and Radix UI components.
 
+|[![](https://img.youtube.com/vi/TEw3bM_ElD0/0.jpg)](https://youtu.be/TEw3bM_ElD0)| Watch the demo video |
+|---------------------------------------------------------------------------------|------------------|
 ---
 
 ## 🚀 Features
