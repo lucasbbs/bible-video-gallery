@@ -1,3 +1,4 @@
+import { useId, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,6 +17,9 @@ export function ListItem({
     description,
     ...props
 }: CardProps) {
+    const [mobileActionsOpen, setMobileActionsOpen] = useState(false)
+    const actionsId = useId()
+
     return (
         <Card className={cn('group w-full', className)} {...props}>
             <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -25,7 +29,7 @@ export function ListItem({
                 </div>
                 {children ? (
                     <>
-                        <div className="items-center gap-2 flex">
+                        <div className="hidden items-center gap-2 sm:flex">
                             <div className="flex items-center gap-2 origin-right scale-0 opacity-0 pointer-events-none transition-all duration-200 ease-in group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:scale-100 group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
                                 {children}
                             </div>
@@ -38,6 +42,39 @@ export function ListItem({
                             >
                                 <MoreHorizontal className="h-5 w-5" />
                             </Button>
+                        </div>
+                        <div className="flex items-center sm:hidden">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label={
+                                    mobileActionsOpen
+                                        ? 'Hide actions'
+                                        : 'Show actions'
+                                }
+                                aria-expanded={mobileActionsOpen}
+                                aria-controls={actionsId}
+                                className="h-9 w-9 rounded-full transition duration-200 ease-in"
+                                onClick={() =>
+                                    setMobileActionsOpen((open) => !open)
+                                }
+                            >
+                                <MoreHorizontal className="h-5 w-5 transition-transform duration-200" />
+                            </Button>
+                            <div
+                                id={actionsId}
+                                className={cn(
+                                    'flex overflow-hidden transition-all duration-200 ease-in',
+                                    mobileActionsOpen
+                                        ? 'ml-2 max-w-[18rem] opacity-100 pointer-events-auto'
+                                        : 'max-w-0 opacity-0 pointer-events-none'
+                                )}
+                            >
+                                <div className="flex items-center gap-2">
+                                    {children}
+                                </div>
+                            </div>
                         </div>
                     </>
                 ) : null}
