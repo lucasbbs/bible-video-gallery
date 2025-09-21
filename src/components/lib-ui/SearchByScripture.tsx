@@ -12,13 +12,7 @@ import { Dialog, DialogTrigger } from '../../components/ui/dialog'
 import { Button } from '../../components/ui/button'
 import { VideoModal } from '../../components/lib-ui/VideoModal'
 import { useEffect, useState } from 'react'
-
-type Video = {
-    title: string
-    name: string
-    description: string
-    chapter: number
-}
+import { Sermon, SermonDTO } from '@/dtos/sermon.dto'
 
 type SearchByScriptureProps = {
     setLoading: (loading: boolean) => void
@@ -30,8 +24,10 @@ function SearchByScripture({ setLoading }: SearchByScriptureProps) {
     const [selectedChapter, setSelectedChapter] = useState<number>(0)
     const [selectedBook, setSelectedBook] = useState('')
     const [books, setBooks] = useState<string[]>([])
-    const [videos, setVideos] = useState<Video[]>([])
+    const [sermons, setSermons] = useState<SermonDTO[]>([])
     const [showOther, setShowOther] = useState(false)
+
+    console.log({ sermons })
 
     const resetForm = (optionSelected: string[]) => {
         form.reset()
@@ -39,7 +35,7 @@ function SearchByScripture({ setLoading }: SearchByScriptureProps) {
         setChapters([])
         setSelectedBook('')
         setSelectedChapter(0)
-        setVideos([])
+        setSermons([])
     }
 
     const handleTestamentChange = async (value: string) => {
@@ -59,7 +55,7 @@ function SearchByScripture({ setLoading }: SearchByScriptureProps) {
             const {
                 data: { videos }
             } = await getVideos('others')
-            setVideos(videos)
+            setSermons(videos.map((sermon: Sermon) => SermonDTO.from(sermon)))
             setLoading(false)
         }
     }
@@ -69,7 +65,7 @@ function SearchByScripture({ setLoading }: SearchByScriptureProps) {
         const {
             data: { videos }
         } = await getVideos(value)
-        setVideos(videos)
+        setSermons(videos.map((sermon: Sermon) => SermonDTO.from(sermon)))
     }
 
     const handleChapterChange = (value: number) => {
@@ -80,10 +76,9 @@ function SearchByScripture({ setLoading }: SearchByScriptureProps) {
         if (showOther) {
             return
         }
-        const chapters = videos.map((video: any) => video.chapter)
-        console.log(chapters)
+        const chapters = sermons.map((video: SermonDTO) => video.chapter)
         setChapters([...new Set(chapters)].sort((a, b) => a - b))
-    }, [videos])
+    }, [sermons])
 
     return (
         <div>
@@ -138,39 +133,49 @@ function SearchByScripture({ setLoading }: SearchByScriptureProps) {
             <div className="card relative !px-8 !py-6 h-2/4">
                 <div className="grid gap-4">
                     <ListItemAccordionProvider>
-                        {videos
+                        {sermons
                             .filter(
                                 (video) =>
                                     video.chapter === selectedChapter ||
                                     showOther
                             )
-                            .map((video, index) => (
+                            .map((sermon) => (
                                 <ListItem
-                                    key={`${video.title}-${index}`}
-                                    itemId={`${video.title}-${index}`}
-                                    title={video.name}
-                                    description={video.description}
+                                    key={`${sermon._id}`}
+                                    itemId={`${sermon._id}`}
+                                    title={sermon.name}
+                                    description={sermon.description}
                                 >
                                     <div className="flex gap-4">
-                                        <Button
-                                            className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
-                                            variant={'secondary'}
-                                            size={'icon'}
-                                        >
-                                            <Headphones />
-                                        </Button>
-                                        <Button
-                                            className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
-                                            onClick={async () =>
-                                                await getFileNoteDownloadLink(
-                                                    video.title
-                                                )
-                                            }
-                                            variant={'secondary'}
-                                            size={'icon'}
-                                        >
-                                            <NotebookText />
-                                        </Button>
+                                        {sermon.audioUrl ? (
+                                            <Button
+                                                className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
+                                                variant={'secondary'}
+                                                onClick={() => {
+                                                    window.open(sermon.audioUrl)
+                                                }}
+                                                size={'icon'}
+                                            >
+                                                <Headphones />
+                                            </Button>
+                                        ) : null}
+                                        {sermon.sermonPdfUrl ? (
+                                            <Button
+                                                className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
+                                                onClick={async () => {
+                                                    const { data } =
+                                                        await getFileNoteDownloadLink(
+                                                            sermon.sermonPdfUrl ||
+                                                                ''
+                                                        )
+                                                    window.open(data.url)
+                                                }}
+                                                variant={'secondary'}
+                                                size={'icon'}
+                                            >
+                                                <NotebookText />
+                                            </Button>
+                                        ) : null}
                                         <Dialog>
                                             <DialogTrigger asChild>
                                                 <Button
@@ -181,7 +186,7 @@ function SearchByScripture({ setLoading }: SearchByScriptureProps) {
                                                     <MonitorPlay />
                                                 </Button>
                                             </DialogTrigger>
-                                            <VideoModal id={video.title} />
+                                            <VideoModal id={sermon.uri} />
                                         </Dialog>
                                     </div>
                                 </ListItem>
