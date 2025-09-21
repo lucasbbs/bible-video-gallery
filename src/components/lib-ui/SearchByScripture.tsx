@@ -3,8 +3,11 @@ import { Headphones, MonitorPlay, NotebookText } from 'lucide-react'
 import { oldTestament, newTestament, allBooks } from '../../shared/books'
 import { Form } from '@/components/ui/form'
 import Selector from '../../components/lib-ui/Selector'
-import { ListItem } from '../../components/lib-ui/ListItem'
-import { getVideos } from '../../services/videos'
+import {
+    ListItem,
+    ListItemAccordionProvider
+} from '../../components/lib-ui/ListItem'
+import { getFileNoteDownloadLink, getVideos } from '../../services/videos'
 import { Dialog, DialogTrigger } from '../../components/ui/dialog'
 import { Button } from '../../components/ui/button'
 import { VideoModal } from '../../components/lib-ui/VideoModal'
@@ -132,49 +135,58 @@ function SearchByScripture({ setLoading }: SearchByScriptureProps) {
                     </form>
                 </Form>
             </div>
-            <div className="card relative p-10 h-2/4">
+            <div className="card relative !px-8 !py-6 h-2/4">
                 <div className="grid gap-4">
-                    {videos
-                        .filter(
-                            (video) =>
-                                video.chapter === selectedChapter || showOther
-                        )
-                        .map((video, index) => (
-                            <ListItem
-                                key={index}
-                                title={video.name}
-                                description={video.description}
-                            >
-                                <div className="flex gap-4">
-                                    <Button
-                                        className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
-                                        variant={'secondary'}
-                                        size={'icon'}
-                                    >
-                                        <Headphones />
-                                    </Button>
-                                    <Button
-                                        className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
-                                        variant={'secondary'}
-                                        size={'icon'}
-                                    >
-                                        <NotebookText />
-                                    </Button>
-                                    <Dialog>
-                                        <DialogTrigger asChild>
-                                            <Button
-                                                className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
-                                                variant={'secondary'}
-                                                size={'icon'}
-                                            >
-                                                <MonitorPlay />
-                                            </Button>
-                                        </DialogTrigger>
-                                        <VideoModal id={video.title} />
-                                    </Dialog>
-                                </div>
-                            </ListItem>
-                        ))}
+                    <ListItemAccordionProvider>
+                        {videos
+                            .filter(
+                                (video) =>
+                                    video.chapter === selectedChapter ||
+                                    showOther
+                            )
+                            .map((video, index) => (
+                                <ListItem
+                                    key={`${video.title}-${index}`}
+                                    itemId={`${video.title}-${index}`}
+                                    title={video.name}
+                                    description={video.description}
+                                >
+                                    <div className="flex gap-4">
+                                        <Button
+                                            className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
+                                            variant={'secondary'}
+                                            size={'icon'}
+                                        >
+                                            <Headphones />
+                                        </Button>
+                                        <Button
+                                            className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
+                                            onClick={async () =>
+                                                await getFileNoteDownloadLink(
+                                                    video.title
+                                                )
+                                            }
+                                            variant={'secondary'}
+                                            size={'icon'}
+                                        >
+                                            <NotebookText />
+                                        </Button>
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
+                                                    variant={'secondary'}
+                                                    size={'icon'}
+                                                >
+                                                    <MonitorPlay />
+                                                </Button>
+                                            </DialogTrigger>
+                                            <VideoModal id={video.title} />
+                                        </Dialog>
+                                    </div>
+                                </ListItem>
+                            ))}
+                    </ListItemAccordionProvider>
                 </div>
             </div>
         </div>

@@ -1,13 +1,49 @@
-import { useId, useState } from 'react'
+import {
+    createContext,
+    useContext,
+    useId,
+    useState,
+    type ComponentProps,
+    type Dispatch,
+    type ReactNode,
+    type SetStateAction
+} from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { MoreHorizontal } from 'lucide-react'
 
-type CardProps = React.ComponentProps<typeof Card> & {
+type ListItemAccordionContextValue = {
+    openItemId: string | null
+    setOpenItemId: Dispatch<SetStateAction<string | null>>
+}
+
+const ListItemAccordionContext =
+    createContext<ListItemAccordionContextValue | null>(null)
+
+type ListItemAccordionProviderProps = {
+    children: ReactNode
+}
+
+export function ListItemAccordionProvider({
+    children
+}: ListItemAccordionProviderProps) {
+    const [openItemId, setOpenItemId] = useState<string | null>(null)
+
+    return (
+        <ListItemAccordionContext.Provider
+            value={{ openItemId, setOpenItemId }}
+        >
+            {children}
+        </ListItemAccordionContext.Provider>
+    )
+}
+
+type CardProps = ComponentProps<typeof Card> & {
     title?: string
     footer?: string
     description?: string
+    itemId?: string
 }
 
 export function ListItem({
@@ -15,10 +51,29 @@ export function ListItem({
     title,
     children,
     description,
+    itemId,
     ...props
 }: CardProps) {
-    const [mobileActionsOpen, setMobileActionsOpen] = useState(false)
+    const accordion = useContext(ListItemAccordionContext)
+    const autoItemId = useId()
+    const resolvedItemId = itemId ?? autoItemId
     const actionsId = useId()
+    const [localMobileOpen, setLocalMobileOpen] = useState(false)
+
+    const mobileActionsOpen = accordion
+        ? accordion.openItemId === resolvedItemId
+        : localMobileOpen
+
+    const toggleMobileActions = () => {
+        if (accordion) {
+            accordion.setOpenItemId((current) =>
+                current === resolvedItemId ? null : resolvedItemId
+            )
+            return
+        }
+
+        setLocalMobileOpen((open) => !open)
+    }
 
     return (
         <Card className={cn('group w-full', className)} {...props}>
@@ -38,9 +93,9 @@ export function ListItem({
                                 variant="ghost"
                                 size="icon"
                                 aria-label="Toggle actions"
-                                className="h-9 w-9 rounded-full transition duration-200 ease-in"
+                                className="h-12 w-12 !rounded-full transition duration-200 ease-in"
                             >
-                                <MoreHorizontal className="h-5 w-5" />
+                                <MoreHorizontal className="h-12 w-12" />
                             </Button>
                         </div>
                         <div className="flex items-center sm:hidden">
@@ -55,12 +110,10 @@ export function ListItem({
                                 }
                                 aria-expanded={mobileActionsOpen}
                                 aria-controls={actionsId}
-                                className="h-9 w-9 rounded-full transition duration-200 ease-in"
-                                onClick={() =>
-                                    setMobileActionsOpen((open) => !open)
-                                }
+                                className="h-12 w-12 !rounded-full transition duration-200 ease-in"
+                                onClick={toggleMobileActions}
                             >
-                                <MoreHorizontal className="h-5 w-5 transition-transform duration-200" />
+                                <MoreHorizontal className="h-12 w-12 transition-transform duration-200" />
                             </Button>
                             <div
                                 id={actionsId}
