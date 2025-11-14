@@ -21,9 +21,10 @@ type SearchByScriptureProps = {
 function SearchByScripture({ setLoading }: SearchByScriptureProps) {
     const form = useForm()
     const [chapters, setChapters] = useState<number[]>([])
+    const [selectedTestament, setSelectedTestament] = useState('all')
     const [selectedChapter, setSelectedChapter] = useState<number>(0)
     const [selectedBook, setSelectedBook] = useState('')
-    const [books, setBooks] = useState<string[]>([])
+    const [books, setBooks] = useState<string[]>(allBooks)
     const [sermons, setSermons] = useState<SermonDTO[]>([])
     const [showOther, setShowOther] = useState(false)
 
@@ -58,6 +59,7 @@ function SearchByScripture({ setLoading }: SearchByScriptureProps) {
             setSermons(videos.map((sermon: Sermon) => SermonDTO.from(sermon)))
             setLoading(false)
         }
+        setSelectedTestament(value)
     }
 
     const handleBookChange = async (value: string) => {
@@ -89,6 +91,7 @@ function SearchByScripture({ setLoading }: SearchByScriptureProps) {
                             <Selector
                                 form={form}
                                 onChange={handleTestamentChange}
+                                value={selectedTestament}
                                 options={[
                                     { value: 'all', label: 'All' },
                                     { value: 'old', label: 'Old Testament' },
@@ -130,68 +133,73 @@ function SearchByScripture({ setLoading }: SearchByScriptureProps) {
                     </form>
                 </Form>
             </div>
-            <div className="card relative !px-8 !py-6 h-2/4">
+            <div className="relative !py-6 h-2/4">
                 <div className="grid gap-4">
-                    <ListItemAccordionProvider>
-                        {sermons
-                            .filter(
-                                (video) =>
-                                    video.chapter === selectedChapter ||
-                                    showOther
-                            )
-                            .map((sermon) => (
-                                <ListItem
-                                    key={`${sermon._id}`}
-                                    itemId={`${sermon._id}`}
-                                    title={sermon.name}
-                                    description={sermon.description}
-                                >
-                                    <div className="flex gap-4">
-                                        {sermon.audioUrl ? (
+                    {/* <ListItemAccordionProvider> */}
+                    {sermons
+                        .filter(
+                            (video) =>
+                                video.chapter === selectedChapter || showOther
+                        )
+                        .map((sermon) => (
+                            <ListItem
+                                key={`${sermon._id}`}
+                                itemId={`${sermon._id}`}
+                                title={sermon.name}
+                                createdTime={new Intl.DateTimeFormat('en-CA', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                }).format(new Date(sermon.createdAt))}
+                                description={sermon.description}
+                                passage={sermon.description}
+                            >
+                                <div className="flex gap-4">
+                                    {sermon.audioUrl ? (
+                                        <Button
+                                            className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
+                                            variant={'secondary'}
+                                            onClick={() => {
+                                                window.open(sermon.audioUrl)
+                                            }}
+                                            size={'icon'}
+                                        >
+                                            <Headphones />
+                                        </Button>
+                                    ) : null}
+                                    {sermon.sermonPdfUrl ? (
+                                        <Button
+                                            className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
+                                            onClick={async () => {
+                                                const { data } =
+                                                    await getFileNoteDownloadLink(
+                                                        sermon.sermonPdfUrl ||
+                                                            ''
+                                                    )
+                                                window.open(data.url)
+                                            }}
+                                            variant={'secondary'}
+                                            size={'icon'}
+                                        >
+                                            <NotebookText />
+                                        </Button>
+                                    ) : null}
+                                    <Dialog>
+                                        <DialogTrigger asChild>
                                             <Button
                                                 className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
                                                 variant={'secondary'}
-                                                onClick={() => {
-                                                    window.open(sermon.audioUrl)
-                                                }}
                                                 size={'icon'}
                                             >
-                                                <Headphones />
+                                                <MonitorPlay />
                                             </Button>
-                                        ) : null}
-                                        {sermon.sermonPdfUrl ? (
-                                            <Button
-                                                className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
-                                                onClick={async () => {
-                                                    const { data } =
-                                                        await getFileNoteDownloadLink(
-                                                            sermon.sermonPdfUrl ||
-                                                                ''
-                                                        )
-                                                    window.open(data.url)
-                                                }}
-                                                variant={'secondary'}
-                                                size={'icon'}
-                                            >
-                                                <NotebookText />
-                                            </Button>
-                                        ) : null}
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button
-                                                    className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
-                                                    variant={'secondary'}
-                                                    size={'icon'}
-                                                >
-                                                    <MonitorPlay />
-                                                </Button>
-                                            </DialogTrigger>
-                                            <VideoModal id={sermon.uri} />
-                                        </Dialog>
-                                    </div>
-                                </ListItem>
-                            ))}
-                    </ListItemAccordionProvider>
+                                        </DialogTrigger>
+                                        <VideoModal id={sermon.uri} />
+                                    </Dialog>
+                                </div>
+                            </ListItem>
+                        ))}
+                    {/* </ListItemAccordionProvider> */}
                 </div>
             </div>
         </div>

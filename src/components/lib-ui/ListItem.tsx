@@ -11,7 +11,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
-import { MoreHorizontal } from 'lucide-react'
+import { MoreHorizontal, BookOpen, Calendar } from 'lucide-react'
 
 type ListItemAccordionContextValue = {
     openItemId: string | null
@@ -44,14 +44,17 @@ type CardProps = ComponentProps<typeof Card> & {
     footer?: string
     description?: string
     itemId?: string
+    createdTime: string
+    passage: string
 }
 
 export function ListItem({
     className,
     title,
     children,
-    description,
     itemId,
+    createdTime,
+    passage,
     ...props
 }: CardProps) {
     const accordion = useContext(ListItemAccordionContext)
@@ -79,8 +82,14 @@ export function ListItem({
         <Card className={cn('group w-full', className)} {...props}>
             <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex w-full flex-col items-start">
-                    <CardTitle>{title}</CardTitle>
-                    <small>{description}</small>
+                    <CardTitle className="pb-2">{title}</CardTitle>
+                    <div className="flex gap-2">
+                        <Calendar size={18} />
+                        <small>{createdTime}</small>
+                        <small>{` | `}</small>
+                        <BookOpen size={18} />
+                        <small>{passage}</small>
+                    </div>
                 </div>
                 {children ? (
                     <>
