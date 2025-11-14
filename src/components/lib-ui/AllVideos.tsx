@@ -40,12 +40,20 @@ function AllVideos({ loading, setLoading }: AllVideosProps) {
         <div className="grid gap-4 px-8">
             <ListItemAccordionProvider>
                 {!loading &&
-                    sermons.map((sermon) => (
+                    sermons.map((sermon) => { 
+                        console.log(sermon)
+                        return(
                         <ListItem
                             key={sermon.uri}
                             itemId={sermon.uri}
                             title={sermon.name}
                             description={sermon.description}
+                            createdTime={new Intl.DateTimeFormat('en-CA', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                }).format(new Date(sermon.createdAt))}
+                            passage={sermon.description}
                         >
                             <div className="flex gap-4">
                                 {sermon.audioUrl ? (
@@ -95,7 +103,7 @@ function AllVideos({ loading, setLoading }: AllVideosProps) {
                                 </Dialog>
                             </div>
                         </ListItem>
-                    ))}
+                    )})}
             </ListItemAccordionProvider>
             <div className="mt-12">
                 <PaginationWithLinks
