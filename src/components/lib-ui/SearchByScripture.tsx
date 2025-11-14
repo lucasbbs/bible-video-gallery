@@ -5,7 +5,6 @@ import { Form } from '@/components/ui/form'
 import Selector from '../../components/lib-ui/Selector'
 import {
     ListItem,
-    ListItemAccordionProvider
 } from '../../components/lib-ui/ListItem'
 import { getFileNoteDownloadLink, getVideos } from '../../services/videos'
 import { Dialog, DialogTrigger } from '../../components/ui/dialog'
