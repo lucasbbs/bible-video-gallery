@@ -40,9 +40,7 @@ function AllVideos({ loading, setLoading }: AllVideosProps) {
         <div className="grid gap-4 px-8">
             <ListItemAccordionProvider>
                 {!loading &&
-                    sermons.map((sermon) => { 
-                        console.log(sermon)
-                        return(
+                    sermons.map((sermon) => (
                         <ListItem
                             key={sermon.uri}
                             itemId={sermon.uri}
@@ -103,7 +101,7 @@ function AllVideos({ loading, setLoading }: AllVideosProps) {
                                 </Dialog>
                             </div>
                         </ListItem>
-                    )})}
+                    ))}
             </ListItemAccordionProvider>
             <div className="mt-12">
                 <PaginationWithLinks
