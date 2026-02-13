@@ -1,27 +1,40 @@
 import { useState } from 'react'
 import './App.css'
-import SwitchButton from './components/lib-ui/SwitchButton';
 import SearchByScripture from './components/lib-ui/SearchByScripture';
 import Spinner from './components/lib-ui/Spinner';
-import AllVideos from './components/lib-ui/AllVideos';
+import { SettingsSelector } from './components/lib-ui/SettingsSelector';
+import { SidebarInset, SidebarProvider } from './components/ui/sidebar';
+import { AppSidebar } from './components/lib-ui/AppSidebar';
+import { ScriptureSearchProvider } from './components/lib-ui/ScriptureSearchContext';
+
 
 function App() {
 
-  const [scripturesSelected, setScripturesSelected] = useState(true)
   const [loading, setLoading] = useState(false)
   return (
-    <div className="card">
-      <div className='flex justify-center pb-16 gap-4 responsive'>
-        <h2 className='text-center text-5xl'>Search By</h2>
-        <SwitchButton
-          scripturesSelected={scripturesSelected}
-          setScripturesSelected={setScripturesSelected}
-        />
-      </div>
-      {loading && <div className='flex justify-center'><Spinner /></div>}
-      {scripturesSelected && <SearchByScripture setLoading={setLoading} />}
-      {!scripturesSelected && <AllVideos loading={loading} setLoading={setLoading} />}
-    </div>
+
+  <SidebarProvider
+    style={
+      {
+        "--sidebar-width": "calc(var(--spacing) * 72)",
+        "--header-height": "calc(var(--spacing) * 12)",
+      } as React.CSSProperties
+    }
+  >
+  <ScriptureSearchProvider setLoading={setLoading}>
+    <AppSidebar variant="inset" />
+      <SidebarInset>
+        <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 bg-background px-4">
+          <h2 className="text-5xl font-semibold">Sermon Gallery</h2>
+        </header>
+        <SettingsSelector />
+        <div className="card">
+          {loading && <div className='flex justify-center'><Spinner /></div>}
+          <SearchByScripture />
+        </div>
+      </SidebarInset>
+    </ScriptureSearchProvider>
+  </SidebarProvider>
   )
 }
 

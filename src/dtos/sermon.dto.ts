@@ -33,6 +33,7 @@ export class SermonDTO {
     createdAt: string
     updatedAt: string
     private constructor(data: Sermon) {
+        console.log(data.description)
         this.uri = data.title
         this.name = data.name
         this.description = data.description
