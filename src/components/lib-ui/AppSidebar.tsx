@@ -132,7 +132,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <Sidebar variant="inset" collapsible="icon" {...props}>
         <SidebarHeader>
           <div className="relative">
-             <SidebarTrigger className="absolute -right-15" />
+             <SidebarTrigger className="absolute -right-15 !outline-none" />
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
@@ -143,7 +143,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <img
                       src={ChurchSVG}
                       className={cn(
-                        "transition-[width,height] duration-200 ease-linear",
+                        "transition-[width,height] duration-200 ease-linear dark:brightness-0 dark:invert",
                         isCollapsed ? "h-6 w-6" : "h-16 w-16"
                       )}
                       alt="Bible Video Gallery"
