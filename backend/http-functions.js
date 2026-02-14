@@ -14,14 +14,42 @@ export async function get_videos(request) {
     }
 
     try {
-        const book = request.query.book
-        const page = Number(request.query.page)
-        const per_page = Number(request.query.per_page)
-        // const has_filters = request.query.has_filters === "1"
-        const has_filters = request.query.has_filters === '1' || (request.query.has_filters == null && Boolean(book))
+        const q = request.query || {}
+
+        const firstQueryValue = (value) =>
+            Array.isArray(value) ? value[0] : value
+
+        const normalizeStringParam = (value) => {
+            const v = firstQueryValue(value)
+            if (typeof v !== 'string') return null
+            const s = v.trim()
+            if (!s || s === 'null' || s === 'undefined') return null
+            return s
+        }
+
+        const parsePositiveInt = (value, fallback) => {
+            const n = Number(firstQueryValue(value))
+            if (!Number.isFinite(n) || n <= 0) return fallback
+            return Math.floor(n)
+        }
+
+        const parseNullablePositiveInt = (value) => {
+            const n = Number(firstQueryValue(value))
+            if (!Number.isFinite(n) || n <= 0) return null
+            return Math.floor(n)
+        }
+
+        const book = normalizeStringParam(q.book)
+        const chapter = parseNullablePositiveInt(q.chapter)
+        const page = parsePositiveInt(q.page, 1)
+        const per_page = Math.min(parsePositiveInt(q.per_page, 20), 1000)
+        const includeChapters =
+            String(firstQueryValue(q.include_chapters) || '')
+                .trim()
+                .toLowerCase() === '1'
         // Optional tags filtering (supports CSV or array)
-        const match = (request.query.match || 'any').toLowerCase() // 'any' | 'all'
-        const rawTags = request.query.tags
+        const match = String(q.match || 'any').toLowerCase() // 'any' | 'all'
+        const rawTags = q.tags
         const tagsFilter = Array.isArray(rawTags)
             ? rawTags
             : typeof rawTags === 'string'
@@ -30,11 +58,6 @@ export async function get_videos(request) {
                     .map((t) => t.trim())
                     .filter(Boolean)
               : []
-
-        let videos = []
-
-        let totalCount = 0
-        let skip = 0
         // If filtering by tags, fetch matching tag record ids first
         let tagIds = []
         let tagsMap = new Map()
@@ -62,79 +85,138 @@ export async function get_videos(request) {
             } while (tSkip < tTotal)
 
             if (!tagIds.length) {
-                options.body = { videos: [] }
+                options.body = {
+                    videos: [],
+                    total: 0,
+                    ...(includeChapters ? { chapters: [] } : {})
+                }
                 return ok(options)
             }
         }
 
-        let builder
+        const applyTagsFilter = (builder) => {
+            if (!tagsFilter.length) return builder
 
-        if (has_filters) {
-            if (!book) {
-                options.body = { error: '`book` query param is required.' }
-                return badRequest(options)
+            if (typeof builder.in === 'function') {
+                return builder.in('sermonTagsId', tagIds)
             }
-            do {
-                builder = wixData.query(newDatabaseTable).eq('book', book)
-                if (tagsFilter.length) {
-                    if (typeof builder.in === 'function') {
-                        builder = builder.in('sermonTagsId', tagIds)
-                    } else {
-                        let b = wixData
+
+            let b = wixData.query(newDatabaseTable).eq('sermonTagsId', tagIds[0])
+            for (const id of tagIds.slice(1)) {
+                b = b.or(
+                    wixData.query(newDatabaseTable).eq('sermonTagsId', id)
+                )
+            }
+            return builder.and(b)
+        }
+
+        let builder = wixData.query(newDatabaseTable)
+        if (book) builder = builder.eq('book', book)
+        if (chapter != null) {
+            builder = builder.and(
+                wixData
+                    .query(newDatabaseTable)
+                    .eq('chapter', chapter)
+                    .or(
+                        wixData
                             .query(newDatabaseTable)
-                            .eq('sermonTagsId', tagIds[0])
-                        for (const id of tagIds.slice(1)) {
-                            b = b.or(
-                                wixData
-                                    .query(newDatabaseTable)
-                                    .eq('sermonTagsId', id)
-                            )
-                        }
-                        builder = builder.and(b)
+                            .eq('chapter', String(chapter))
+                    )
+            )
+        }
+        builder = applyTagsFilter(builder)
+
+        const query = await builder
+            .descending('createdTime')
+            .skip((page - 1) * per_page)
+            .limit(per_page)
+            .find()
+
+        const totalCount = query.totalCount
+        let videos = query.items
+
+        let chapters = []
+        if (includeChapters && book && book !== 'others') {
+            const chapterSet = new Set()
+
+            let cSkip = 0
+            let cTotal = 0
+            const cPageSize = 1000
+
+            let chaptersBuilder = wixData.query(newDatabaseTable).eq('book', book)
+            chaptersBuilder = applyTagsFilter(chaptersBuilder)
+
+            do {
+                const res = await chaptersBuilder
+                    .skip(cSkip)
+                    .limit(cPageSize)
+                    .find()
+
+                for (const item of res.items) {
+                    const itemBook = item?.book || book
+                    let description = item?.description || ''
+                    if (itemBook === 'Psalms' && description) {
+                        description = description.replace(/^Psalm\b/, 'Psalms')
                     }
+
+                    let chapterValue = Number(item?.chapter)
+                    if (!Number.isFinite(chapterValue) || chapterValue <= 0) {
+                        const beforeColon = String(description).split(':')[0] || ''
+                        const raw = itemBook
+                            ? beforeColon.replace(itemBook, '').trim()
+                            : beforeColon.trim()
+                        const parsed = Number(raw)
+                        chapterValue = Number.isFinite(parsed) ? parsed : 0
+                    }
+
+                    if (chapterValue > 0) chapterSet.add(chapterValue)
                 }
 
-                const query = await builder.skip(skip).find()
-                totalCount = query.totalCount
-                videos.push(...query.items)
-                skip += query.items.length
-            } while (skip < totalCount)
-        } else {
-            
-            builder = wixData.query(newDatabaseTable)
-            const query = await builder
-                    .descending("createdTime")
-                    .skip((page - 1) * per_page)
-                    .limit(per_page)
-                    .find();
-            totalCount = query.totalCount;
-            videos = query.items;
+                cSkip += res.items.length
+                cTotal = res.totalCount
+            } while (cSkip < cTotal)
+
+            chapters = Array.from(chapterSet).sort((a, b) => a - b)
         }
+
         videos = videos.map((item) => {
-            let description = item?.description
+            const itemBook = item?.book || book
+            let description = item?.description || ''
 
             // Replace "Psalm" with "Psalms" if the book is "Psalms"
-            if (book === 'Psalms' && description) {
+            if (itemBook === 'Psalms' && description) {
                 description = description.replace(/^Psalm\b/, 'Psalms')
             }
 
-            const chapter =
-                item.chapter ||
-                Number(description.split(':')[0].replace(book, ''))
+            let chapterValue = Number(item?.chapter)
+            if (!Number.isFinite(chapterValue) || chapterValue <= 0) {
+                const beforeColon = String(description).split(':')[0] || ''
+                const raw = itemBook
+                    ? beforeColon.replace(itemBook, '').trim()
+                    : beforeColon.trim()
+                const parsed = Number(raw)
+                chapterValue = Number.isFinite(parsed) ? parsed : 0
+            }
+
             return {
                 ...item,
-                chapter,
+                chapter: chapterValue,
                 sermonTagsId: item?.sermonTagsId || null,
                 tags:
                     (item?.sermonTagsId && tagsMap.get(item.sermonTagsId)) ||
                     item?.tags ||
                     [],
-                description: item.chapter
-                    ? `${item.book} ${item.chapter}:${item.verses}`
-                    : item.description
+                description: chapterValue
+                    ? `${itemBook} ${chapterValue}:${item.verses}`
+                    : description
             }
         })
-        options.body = { videos, total: totalCount }
+
+        options.body = {
+            videos,
+            total: totalCount,
+            ...(includeChapters ? { chapters } : {})
+        }
         return ok(options)
     } catch (error) {
         options.body = { error: error.message }
