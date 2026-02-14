@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
 import { Button } from "../ui/button"
-import { SettingsIcon } from "lucide-react"
+import { SettingsIcon, MinusIcon, PlusIcon } from "lucide-react"
 import { Label } from "../ui/label"
 import { Switch } from "../ui/switch"
+import { useSidebar } from "@/components/ui/sidebar"
 
 export const SettingsSelector = () => {
+  const { isMobile, openComponent, setOpenComponent, state: sidebarState } =
+    useSidebar()
   const [open, setOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('bible-video-gallery:dark-mode') === '1'
   })
-  const [largeText, setLargeText] = useState(() => {
-    return localStorage.getItem('bible-video-gallery:large-text') === '1'
+  const [textSize, setTextSize] = useState(() => {
+    return Number(localStorage.getItem('bible-video-gallery:text-size')) || 16
   })
 
   useEffect(() => {
@@ -20,23 +23,45 @@ export const SettingsSelector = () => {
   }, [darkMode])
 
   useEffect(() => {
-    document.documentElement.style.fontSize = largeText ? '18px' : ''
-    localStorage.setItem('bible-video-gallery:large-text', largeText ? '1' : '0')
-  }, [largeText])
+    document.documentElement.style.fontSize = `${textSize}px`;
+    localStorage.setItem('bible-video-gallery:text-size', String(textSize))
+  }, [textSize])
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+
+    if (nextOpen) {
+      setOpenComponent("settings")
+      return
+    }
+
+    setOpenComponent((current) => {
+      if (current !== "settings") return current
+      return sidebarState === "expanded" ? "sidebar" : ""
+    })
+  }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           aria-label="Open settings"
-          className="fixed top-40 right-4 z-10 h-12 w-12 !rounded-full"
+          className={`fixed top-40 right-4 ${openComponent === "settings" ? "z-60" : "z-30" } h-12 w-12 !rounded-full`}
           size="icon"
           variant="secondary"
         >
           <SettingsIcon size={60} />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" side="left" sideOffset={12} className="w-80">
+      {isMobile && open ? (
+          <button
+            type="button"
+            aria-label="Close settings"
+            onClick={() => handleOpenChange(false)}
+            className="fixed inset-0 z-50 !bg-black/50 md:hidden"
+          />
+        ) : null}
+      <PopoverContent align="start" side="bottom" sideOffset={12} className="w-80 mr-3">
         <div className="grid gap-4">
           <div className="space-y-1">
             <h4 className="font-medium leading-none">Settings</h4>
@@ -54,12 +79,12 @@ export const SettingsSelector = () => {
             </div>
 
             <div className="flex items-center justify-between gap-4">
-              <Label htmlFor="setting-large-text">Large text</Label>
-              <Switch
-                id="setting-large-text"
-                checked={largeText}
-                onCheckedChange={setLargeText}
-              />
+              <Label htmlFor="setting-text-size">Large text</Label>
+              <div className='flex items-center'>
+                <MinusIcon className="cursor-pointer" onClick={() => setTextSize(prev => prev - 1)} />
+                {textSize}
+                <PlusIcon className="cursor-pointer" onClick={() => setTextSize(prev => prev + 1)} />
+              </div>
             </div>
           </div>
 
@@ -67,7 +92,7 @@ export const SettingsSelector = () => {
             variant="outline"
             onClick={() => {
               setDarkMode(false)
-              setLargeText(false)
+              setTextSize(16)
             }}
           >
             Reset
