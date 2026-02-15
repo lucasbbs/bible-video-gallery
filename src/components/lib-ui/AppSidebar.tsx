@@ -132,7 +132,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <Sidebar variant="inset" collapsible="icon" {...props}>
         <SidebarHeader>
           <div className="relative">
-             <SidebarTrigger className="absolute -right-15 !outline-none" />
+             <SidebarTrigger className={`absolute -right-15 !outline-none ${isCollapsed ? '' : 'bg-background'}`} />
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
