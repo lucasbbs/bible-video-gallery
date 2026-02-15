@@ -1,7 +1,5 @@
 import {
     createContext,
-    useContext,
-    useId,
     useState,
     type ComponentProps,
     type Dispatch,
@@ -51,16 +49,10 @@ export function ListItem({
     className,
     title,
     children,
-    itemId,
     createdTime,
     passage,
     ...props
 }: CardProps) {
-    const accordion = useContext(ListItemAccordionContext)
-    const autoItemId = useId()
-    const resolvedItemId = itemId ?? autoItemId
-    const [localMobileOpen, setLocalMobileOpen] = useState(false)
-
 
     return (
         <Card className={cn('group w-full', className)} {...props}>
