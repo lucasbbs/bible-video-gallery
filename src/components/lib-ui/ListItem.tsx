@@ -9,9 +9,8 @@ import {
     type SetStateAction
 } from 'react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
-import { MoreHorizontal, BookOpen, Calendar } from 'lucide-react'
+import { BookOpen, Calendar } from 'lucide-react'
 
 type ListItemAccordionContextValue = {
     openItemId: string | null
@@ -60,23 +59,8 @@ export function ListItem({
     const accordion = useContext(ListItemAccordionContext)
     const autoItemId = useId()
     const resolvedItemId = itemId ?? autoItemId
-    const actionsId = useId()
     const [localMobileOpen, setLocalMobileOpen] = useState(false)
 
-    const mobileActionsOpen = accordion
-        ? accordion.openItemId === resolvedItemId
-        : localMobileOpen
-
-    const toggleMobileActions = () => {
-        if (accordion) {
-            accordion.setOpenItemId((current) =>
-                current === resolvedItemId ? null : resolvedItemId
-            )
-            return
-        }
-
-        setLocalMobileOpen((open) => !open)
-    }
 
     return (
         <Card className={cn('group w-full', className)} {...props}>
@@ -93,11 +77,11 @@ export function ListItem({
                 </div>
                 {children ? (
                     <>
-                        <div className="hidden items-center gap-2 sm:flex">
-                            <div className="flex items-center gap-2 origin-right scale-0 opacity-0 pointer-events-none transition-all duration-200 ease-in group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:scale-100 group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+                        <div className=" items-center gap-2 sm:flex">
+                            <div className="flex items-center gap-2 origin-right pointer-events-none transition-all duration-200 ease-in group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:scale-100 group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
                                 {children}
                             </div>
-                            <Button
+                            {/* <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
@@ -105,9 +89,9 @@ export function ListItem({
                                 className="h-12 w-12 !rounded-full transition duration-200 ease-in"
                             >
                                 <MoreHorizontal className="h-12 w-12" />
-                            </Button>
+                            </Button> */}
                         </div>
-                        <div className="flex items-center sm:hidden">
+                        {/* <div className="flex items-center sm:hidden">
                             <Button
                                 type="button"
                                 variant="ghost"
@@ -137,7 +121,7 @@ export function ListItem({
                                     {children}
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
                     </>
                 ) : null}
             </CardHeader>

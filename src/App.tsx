@@ -25,7 +25,7 @@ function App() {
     <AppSidebar />
       <SidebarInset>
         <header className="sticky top-0 flex h-auto shrink-0 items-center gap-2 bg-background px-4">
-          <h2 className="text-5xl font-semibold w-full text-right">Sermon Gallery</h2>
+          <h2 className="text-5xl font-semibold w-full text-center">Sermon Gallery</h2>
         </header>
         <SettingsSelector />
         <div className="card">

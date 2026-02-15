@@ -70,18 +70,18 @@ function SearchByScripture() {
                                             <NotebookText />
                                         </Button>
                                     ) : null}
-                                    <Dialog>
-                                        <DialogTrigger asChild>
-                                            <Button
-                                                className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
-                                                variant={'secondary'}
-                                                size={'icon'}
-                                            >
-                                                <MonitorPlay />
-                                            </Button>
-                                        </DialogTrigger>
-                                        <VideoModal id={sermon.uri} />
-                                    </Dialog>
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
+                                                    variant={'secondary'}
+                                                    size={'icon'}
+                                                >
+                                                    <MonitorPlay />
+                                                </Button>
+                                            </DialogTrigger>
+                                            <VideoModal id={sermon.uri} />
+                                        </Dialog>
                                 </div>
                             </ListItem>
                         ))}

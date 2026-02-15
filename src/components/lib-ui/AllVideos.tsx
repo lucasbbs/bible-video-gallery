@@ -22,7 +22,7 @@ function AllVideos({ loading, setLoading }: AllVideosProps) {
     const searchParams = new URLSearchParams(location.search)
 
     const page = parseInt(searchParams.get('page') || '1')
-    const pageSize = parseInt(searchParams.get('pageSize') || '20')
+    const pageSize = parseInt(searchParams.get('pageSize') || '5')
 
     useEffect(() => {
         ;(async () => {

@@ -137,14 +137,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  className="h-20 justify-center"
+                  className="h-32 justify-center"
                 >
                   <a href="#">
                     <img
                       src={ChurchSVG}
                       className={cn(
                         "transition-[width,height] duration-200 ease-linear dark:brightness-0 dark:invert",
-                        isCollapsed ? "h-6 w-6" : "h-16 w-16"
+                        isCollapsed ? "h-10 w-auto" : "h-32 w-auto"
                       )}
                       alt="Bible Video Gallery"
                     />

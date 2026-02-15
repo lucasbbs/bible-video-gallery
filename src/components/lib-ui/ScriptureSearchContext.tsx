@@ -70,7 +70,7 @@ export function ScriptureSearchProvider({
     [location.search]
   )
   const page = parseInt(searchParams.get("page") || "1")
-  const pageSize = parseInt(searchParams.get("pageSize") || "20")
+  const pageSize = parseInt(searchParams.get("pageSize") || "5")
 
   const resetForm = (optionSelected: string[]) => {
     form.reset()
