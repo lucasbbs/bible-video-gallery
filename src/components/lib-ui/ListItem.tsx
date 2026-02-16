@@ -70,7 +70,7 @@ export function ListItem({
                 {children ? (
                     <>
                         <div className=" items-center gap-2 sm:flex">
-                            <div className="flex items-center gap-2 origin-right pointer-events-none transition-all duration-200 ease-in group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:scale-100 group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+                            <div className="flex items-center gap-2">
                                 {children}
                             </div>
                             {/* <Button
