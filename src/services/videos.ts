@@ -4,10 +4,11 @@ export const getVideos = async (
     book: string | null,
     page: number | null,
     per_page: number | null,
+    preacher: string | null,
     has_filters = 1
 ) => {
     return await api.get(
-        `/videos?book=${book}&page=${page}&per_page=${per_page}&has_filters=${has_filters}`
+        `/videos?book=${book}&page=${page}&per_page=${per_page}&preacher=${preacher}&has_filters=${has_filters}`
     )
 }
 

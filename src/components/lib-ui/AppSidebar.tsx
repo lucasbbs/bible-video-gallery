@@ -34,17 +34,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const {
     form,
     books,
+    preacher,
     chapters,
     selectedBook,
     selectedChapter,
     selectedTestament,
     handleBookChange,
     handleChapterChange,
+    handlePreacherChange,
     handleTestamentChange,
   } = useScriptureSearch()
 
   const [isScriptureSearchOpen, setIsScriptureSearchOpen] = React.useState(false)
-  const [selectedPreacher, setSelectedPreacher] = React.useState("")
   const [isPreacherSearchOpen, setIsPreacherSearchOpen] = React.useState(false)
 
   React.useEffect(() => {
@@ -104,24 +105,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   ]
 
   const preachers = [
-    'Bruce Arthur',
-    'Jacob Tomc'
+    {label: 'Bruce Arthur', value: 'bruce_arthur'},
+    {label: 'Jacob Tomc', value: 'jacob_tomc'},
+    {label: 'Guest', value: 'guest'}
   ]
-
-  const handlePreacherChange = (value: string) => {
-    setSelectedPreacher(value)
-  }
 
   const searchByPreacher = [
     {
       title: "By Preacher",
       form,
-      onChange: (value: string) => handlePreacherChange(value),
-      value: selectedPreacher,
-      options: preachers.map((preacher) => ({
-        value: preacher,
-        label: preacher,
-      })),
+      onChange: (value: string) =>
+        handlePreacherChange(value === "all" ? "" : value),
+      value: preacher || "all",
+      options: [
+        { value: "all", label: "All" },
+        ...preachers.map((preacher) => ({
+          value: preacher.value,
+          label: preacher.label,
+        })),
+      ],
       formLabel: "Preachers",
       placeholder: "Select Preacher",
     },

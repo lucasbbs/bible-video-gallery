@@ -25,9 +25,11 @@ type ScriptureSearchContextValue = {
   total: number
   page: number
   pageSize: number
+  preacher: string
   handleTestamentChange: (value: string) => void
   handleBookChange: (value: string) => void
   handleChapterChange: (value: number) => void
+  handlePreacherChange: (value: string) => void
 }
 
 const ScriptureSearchContext =
@@ -62,6 +64,7 @@ export function ScriptureSearchProvider({
   const [sermons, setSermons] = useState<SermonDTO[]>([])
   const [showOther, setShowOther] = useState(false)
   const [total, setTotal] = useState(0)
+  const [preacher, setPreacher] = useState('')
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -75,6 +78,7 @@ export function ScriptureSearchProvider({
   const resetForm = (optionSelected: string[]) => {
     form.reset()
     setBooks(optionSelected)
+    setPreacher('')
     setChapters([])
     setSelectedBook("")
     setSelectedChapter(0)
@@ -123,6 +127,14 @@ export function ScriptureSearchProvider({
     setSelectedChapter(value)
   }
 
+  const handlePreacherChange = (value: string) => {
+    setPreacher(value)
+    setSelectedChapter(0)
+    setSermons([])
+    setTotal(0)
+    resetPageInUrl()
+  }
+
   useEffect(() => {
     if (showOther) {
       setChapters([])
@@ -140,15 +152,15 @@ export function ScriptureSearchProvider({
     ;(async () => {
       setLoading(true)
       const book = showOther ? "others" : selectedBook === "" ? null : selectedBook
-      const hasFilters = showOther || selectedBook !== "" ? 1 : 0
+      const hasFilters = showOther || selectedBook !== "" || preacher !== "" ? 1 : 0
       const {
         data: { videos, total },
-      } = await getVideos(book, page, pageSize, hasFilters)
+      } = await getVideos(book, page, pageSize, preacher, hasFilters)
       setTotal(total)
       setSermons(videos.map((sermon: Sermon) => SermonDTO.from(sermon)))
       setLoading(false)
     })()
-  }, [page, pageSize, selectedBook, showOther, setLoading])
+  }, [page, pageSize, selectedBook, showOther, setLoading, preacher])
 
   const contextValue: ScriptureSearchContextValue = {
     form,
@@ -157,6 +169,7 @@ export function ScriptureSearchProvider({
     selectedChapter,
     selectedBook,
     books,
+    preacher,
     sermons,
     showOther,
     total,
@@ -165,6 +178,7 @@ export function ScriptureSearchProvider({
     handleTestamentChange,
     handleBookChange,
     handleChapterChange,
+    handlePreacherChange,
   }
 
   return (

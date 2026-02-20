@@ -1,15 +1,23 @@
-import { ok, notFound, serverError, badRequest } from 'wix-http-functions'
+import {
+    ok,
+    notFound,
+    serverError,
+    badRequest,
+    response
+} from 'wix-http-functions'
 import wixData from 'wix-data'
 import { mediaManager } from 'wix-media-backend'
+import crypto from 'crypto'
 
 const newDatabaseTable = 'sermons'
 const sermonTagsCollection = 'sermon_tags'
-// https://ivanzurita17.wixstudio.com/cbcupdated/_functions/videos//?book=luke&page=1
+
 export async function get_videos(request) {
     const options = {
         headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'public, max-age=3600, s-maxage=3600'
         }
     }
 
@@ -41,13 +49,14 @@ export async function get_videos(request) {
 
         const book = normalizeStringParam(q.book)
         const chapter = parseNullablePositiveInt(q.chapter)
+        const preacher = normalizeStringParam(q.preacher)
         const page = parsePositiveInt(q.page, 1)
-        const per_page = Math.min(parsePositiveInt(q.per_page, 20), 1000)
+        const per_page = parsePositiveInt(q.per_page, 20)
         const includeChapters =
             String(firstQueryValue(q.include_chapters) || '')
                 .trim()
                 .toLowerCase() === '1'
-        // Optional tags filtering (supports CSV or array)
+
         const match = String(q.match || 'any').toLowerCase() // 'any' | 'all'
         const rawTags = q.tags
         const tagsFilter = Array.isArray(rawTags)
@@ -58,41 +67,57 @@ export async function get_videos(request) {
                     .map((t) => t.trim())
                     .filter(Boolean)
               : []
-        // If filtering by tags, fetch matching tag record ids first
+
         let tagIds = []
         let tagsMap = new Map()
-        if (tagsFilter.length) {
-            let tQuery = wixData.query(sermonTagsCollection)
-            tQuery =
-                match === 'all'
-                    ? tQuery.hasAll('tags', tagsFilter)
-                    : tQuery.hasSome('tags', tagsFilter)
 
-            let tSkip = 0
-            const tPageSize = 50
-            let tTotal = 0
-            do {
-                const res = await tQuery.skip(tSkip).limit(tPageSize).find()
-                if (!res.items.length) break
-                for (const it of res.items) {
-                    if (it && it._id) {
-                        tagIds.push(it._id)
-                        tagsMap.set(it._id, it.tags || [])
-                    }
-                }
-                tSkip += res.items.length
-                tTotal = res.totalCount
-            } while (tSkip < tTotal)
+        // if (tagsFilter.length) {
+        //   let tQuery = wixData.query(sermonTagsCollection)
+        //   tQuery =
+        //     match === 'all' ? tQuery.hasAll('tags', tagsFilter) : tQuery.hasSome('tags', tagsFilter)
 
-            if (!tagIds.length) {
-                options.body = {
-                    videos: [],
-                    total: 0,
-                    ...(includeChapters ? { chapters: [] } : {})
-                }
-                return ok(options)
-            }
-        }
+        //   let tSkip = 0
+        //   const tPageSize = 50
+        //   let tTotal = 0
+        //   do {
+        //     const res = await tQuery.skip(tSkip).limit(tPageSize).find()
+        //     if (!res.items.length) break
+        //     for (const it of res.items) {
+        //       if (it && it._id) {
+        //         tagIds.push(it._id)
+        //         tagsMap.set(it._id, it.tags || [])
+        //       }
+        //     }
+        //     tSkip += res.items.length
+        //     tTotal = res.totalCount
+        //   } while (tSkip < tTotal)
+
+        //   if (!tagIds.length) {
+        //     options.body = {
+        //       videos: [],
+        //       total: 0,
+        //       ...(includeChapters ? { chapters: [] } : {})
+        //     }
+
+        //     // ---- ETag + 304 support (even for empty result) ----
+        //     const json = JSON.stringify(options.body)
+        //     const hash = crypto.createHash('sha1').update(json).digest('hex')
+        //     const etag = `W/"${hash}"`
+        //     options.headers.ETag = etag
+
+        //     const inm =
+        //       request?.headers?.['if-none-match'] ||
+        //       request?.headers?.['If-None-Match'] ||
+        //       request?.headers?.['IF-NONE-MATCH']
+
+        //     if (inm === etag) {
+        //       return response({ status: 304, headers: options.headers })
+        //     }
+        //     // ---------------------------------------------------
+
+        //     return ok(options)
+        //   }
+        // }
 
         const applyTagsFilter = (builder) => {
             if (!tagsFilter.length) return builder
@@ -101,29 +126,19 @@ export async function get_videos(request) {
                 return builder.in('sermonTagsId', tagIds)
             }
 
-            let b = wixData.query(newDatabaseTable).eq('sermonTagsId', tagIds[0])
+            let b = wixData
+                .query(newDatabaseTable)
+                .eq('sermonTagsId', tagIds[0])
             for (const id of tagIds.slice(1)) {
-                b = b.or(
-                    wixData.query(newDatabaseTable).eq('sermonTagsId', id)
-                )
+                b = b.or(wixData.query(newDatabaseTable).eq('sermonTagsId', id))
             }
             return builder.and(b)
         }
 
         let builder = wixData.query(newDatabaseTable)
         if (book) builder = builder.eq('book', book)
-        if (chapter != null) {
-            builder = builder.and(
-                wixData
-                    .query(newDatabaseTable)
-                    .eq('chapter', chapter)
-                    .or(
-                        wixData
-                            .query(newDatabaseTable)
-                            .eq('chapter', String(chapter))
-                    )
-            )
-        }
+        if (preacher) builder = builder.eq('preacher', preacher)
+        if (chapter != null) builder = builder.eq('chapter', chapter)
         builder = applyTagsFilter(builder)
 
         const query = await builder
@@ -143,7 +158,9 @@ export async function get_videos(request) {
             let cTotal = 0
             const cPageSize = 1000
 
-            let chaptersBuilder = wixData.query(newDatabaseTable).eq('book', book)
+            let chaptersBuilder = wixData
+                .query(newDatabaseTable)
+                .eq('book', book)
             chaptersBuilder = applyTagsFilter(chaptersBuilder)
 
             do {
@@ -159,9 +176,10 @@ export async function get_videos(request) {
                         description = description.replace(/^Psalm\b/, 'Psalms')
                     }
 
-                    let chapterValue = Number(item?.chapter)
-                    if (!Number.isFinite(chapterValue) || chapterValue <= 0) {
-                        const beforeColon = String(description).split(':')[0] || ''
+                    let chapterValue = item?.chapter
+                    if (!chapterValue) {
+                        const beforeColon =
+                            String(description).split(':')[0] || ''
                         const raw = itemBook
                             ? beforeColon.replace(itemBook, '').trim()
                             : beforeColon.trim()
@@ -169,7 +187,7 @@ export async function get_videos(request) {
                         chapterValue = Number.isFinite(parsed) ? parsed : 0
                     }
 
-                    if (chapterValue > 0) chapterSet.add(chapterValue)
+                    if (chapterValue) chapterSet.add(chapterValue)
                 }
 
                 cSkip += res.items.length
@@ -183,13 +201,12 @@ export async function get_videos(request) {
             const itemBook = item?.book || book
             let description = item?.description || ''
 
-            // Replace "Psalm" with "Psalms" if the book is "Psalms"
             if (itemBook === 'Psalms' && description) {
                 description = description.replace(/^Psalm\b/, 'Psalms')
             }
 
-            let chapterValue = Number(item?.chapter)
-            if (!Number.isFinite(chapterValue) || chapterValue <= 0) {
+            let chapterValue = item?.chapter
+            if (!chapterValue) {
                 const beforeColon = String(description).split(':')[0] || ''
                 const raw = itemBook
                     ? beforeColon.replace(itemBook, '').trim()
@@ -207,7 +224,7 @@ export async function get_videos(request) {
                     item?.tags ||
                     [],
                 description: chapterValue
-                    ? `${itemBook} ${chapterValue}:${item.verses}`
+                    ? `${item.book} ${chapterValue}:${item.verses}`
                     : description
             }
         })
@@ -217,6 +234,23 @@ export async function get_videos(request) {
             total: totalCount,
             ...(includeChapters ? { chapters } : {})
         }
+
+        // ---- ETag + 304 support ----
+        const json = JSON.stringify(options.body)
+        const hash = crypto.createHash('sha1').update(json).digest('hex')
+        const etag = `W/"${hash}"`
+        options.headers.ETag = etag
+
+        const inm =
+            request?.headers?.['if-none-match'] ||
+            request?.headers?.['If-None-Match'] ||
+            request?.headers?.['IF-NONE-MATCH']
+
+        if (inm === etag) {
+            return response({ status: 304, headers: options.headers })
+        }
+        // ---------------------------
+
         return ok(options)
     } catch (error) {
         options.body = { error: error.message }
@@ -352,6 +386,7 @@ export async function post_videos(request) {
             verses = null,
             url,
             title = '',
+            preacher = '',
             audioUrl = '',
             sermonPdfBase64 = '',
             sermonPdfName = 'sermon.pdf',
@@ -416,6 +451,7 @@ export async function post_videos(request) {
 
         const item = {
             name: title,
+            preacher,
             book,
             videoLink: url,
             title: getVimeoId(url),
@@ -503,6 +539,7 @@ export async function put_videos(request) {
             id,
             book,
             title,
+            preacher,
             chapter = null,
             verses = null,
             url,
@@ -606,6 +643,7 @@ export async function put_videos(request) {
         const updatedItem = {
             ...existing,
             title: getVimeoId(url) ?? existing.title,
+            preacher: preacher === undefined ? existing.preacher : preacher,
             videoLink: url ?? existing.videoLink,
             book,
             description,
@@ -1002,6 +1040,7 @@ export async function get_sermons(request) {
         const items = res.items.map((it) => ({
             id: it._id,
             collection: newDatabaseTable,
+            preacher: it.preacher || '',
             book: it.book || '',
             name: it.name || '',
             description: it.description || '',
