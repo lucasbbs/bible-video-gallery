@@ -1,4 +1,5 @@
 import api from './api'
+import { buildEtagCacheKey, readEtagCache, writeEtagCache } from './etagCache'
 
 export const getVideos = async (
     book: string | null,
@@ -7,9 +8,35 @@ export const getVideos = async (
     preacher: string | null,
     has_filters = 1
 ) => {
-    return await api.get(
-        `/videos?book=${book}&page=${page}&per_page=${per_page}&preacher=${preacher}&has_filters=${has_filters}`
-    )
+    const url = `/videos?book=${book}&page=${page}&per_page=${per_page}&preacher=${preacher}&has_filters=${has_filters}`
+
+    const cacheKey = buildEtagCacheKey(api.defaults.baseURL, url)
+    const cached = readEtagCache<unknown>(cacheKey)
+
+    const headers: Record<string, string> = {}
+    if (cached?.etag && cached?.data) headers['If-None-Match'] = cached.etag
+
+    const res = await api.get(url, {
+        headers,
+        validateStatus: (status) =>
+            (status >= 200 && status < 300) || status === 304
+    })
+
+    const etag = res.headers?.etag
+
+    if (res.status === 304 && cached?.data) {
+        return { ...res, data: cached.data }
+    }
+
+    if (etag) {
+        writeEtagCache(cacheKey, {
+            etag,
+            data: res.data,
+            storedAt: Date.now()
+        })
+    }
+
+    return res
 }
 
 export const getFileNoteDownloadLink = async (videoId: string) => {

@@ -13,10 +13,11 @@ const newDatabaseTable = 'sermons'
 const sermonTagsCollection = 'sermon_tags'
 
 export async function get_videos(request) {
+    const origin = request?.headers?.origin
     const options = {
         headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
+            ...corsHeaders(origin),
             'Cache-Control': 'public, max-age=3600, s-maxage=3600'
         }
     }
@@ -72,51 +73,56 @@ export async function get_videos(request) {
         let tagsMap = new Map()
 
         // if (tagsFilter.length) {
-        //   let tQuery = wixData.query(sermonTagsCollection)
-        //   tQuery =
-        //     match === 'all' ? tQuery.hasAll('tags', tagsFilter) : tQuery.hasSome('tags', tagsFilter)
+        //     let tQuery = wixData.query(sermonTagsCollection)
+        //     tQuery =
+        //         match === 'all'
+        //             ? tQuery.hasAll('tags', tagsFilter)
+        //             : tQuery.hasSome('tags', tagsFilter)
 
-        //   let tSkip = 0
-        //   const tPageSize = 50
-        //   let tTotal = 0
-        //   do {
-        //     const res = await tQuery.skip(tSkip).limit(tPageSize).find()
-        //     if (!res.items.length) break
-        //     for (const it of res.items) {
-        //       if (it && it._id) {
-        //         tagIds.push(it._id)
-        //         tagsMap.set(it._id, it.tags || [])
-        //       }
+        //     let tSkip = 0
+        //     const tPageSize = 50
+        //     let tTotal = 0
+        //     do {
+        //         const res = await tQuery.skip(tSkip).limit(tPageSize).find()
+        //         if (!res.items.length) break
+        //         for (const it of res.items) {
+        //             if (it && it._id) {
+        //                 tagIds.push(it._id)
+        //                 tagsMap.set(it._id, it.tags || [])
+        //             }
+        //         }
+        //         tSkip += res.items.length
+        //         tTotal = res.totalCount
+        //     } while (tSkip < tTotal)
+
+        //     if (!tagIds.length) {
+        //         options.body = {
+        //             videos: [],
+        //             total: 0,
+        //             ...(includeChapters ? { chapters: [] } : {})
+        //         }
+
+        //         // ---- ETag + 304 support (even for empty result) ----
+        //         const json = JSON.stringify(options.body)
+        //         const hash = crypto
+        //             .createHash('sha1')
+        //             .update(json)
+        //             .digest('hex')
+        //         const etag = `W/"${hash}"`
+        //         options.headers.ETag = etag
+
+        //         const inm =
+        //             request?.headers?.['if-none-match'] ||
+        //             request?.headers?.['If-None-Match'] ||
+        //             request?.headers?.['IF-NONE-MATCH']
+
+        //         if (inm === etag) {
+        //             return response({ status: 304, headers: options.headers })
+        //         }
+        //         // ---------------------------------------------------
+
+        //         return ok(options)
         //     }
-        //     tSkip += res.items.length
-        //     tTotal = res.totalCount
-        //   } while (tSkip < tTotal)
-
-        //   if (!tagIds.length) {
-        //     options.body = {
-        //       videos: [],
-        //       total: 0,
-        //       ...(includeChapters ? { chapters: [] } : {})
-        //     }
-
-        //     // ---- ETag + 304 support (even for empty result) ----
-        //     const json = JSON.stringify(options.body)
-        //     const hash = crypto.createHash('sha1').update(json).digest('hex')
-        //     const etag = `W/"${hash}"`
-        //     options.headers.ETag = etag
-
-        //     const inm =
-        //       request?.headers?.['if-none-match'] ||
-        //       request?.headers?.['If-None-Match'] ||
-        //       request?.headers?.['IF-NONE-MATCH']
-
-        //     if (inm === etag) {
-        //       return response({ status: 304, headers: options.headers })
-        //     }
-        //     // ---------------------------------------------------
-
-        //     return ok(options)
-        //   }
         // }
 
         const applyTagsFilter = (builder) => {
@@ -241,12 +247,8 @@ export async function get_videos(request) {
         const etag = `W/"${hash}"`
         options.headers.ETag = etag
 
-        const inm =
-            request?.headers?.['if-none-match'] ||
-            request?.headers?.['If-None-Match'] ||
-            request?.headers?.['IF-NONE-MATCH']
-
-        if (inm === etag) {
+        const inm = getHeader(request, 'if-none-match')
+        if (ifNoneMatchMatches(inm, etag)) {
             return response({ status: 304, headers: options.headers })
         }
         // ---------------------------
@@ -322,7 +324,8 @@ export async function get_myFunction(request) {
 // Handle preflight for /_functions/videos
 export function options_videos(request) {
     const origin = request?.headers?.origin
-    return ok({ headers: corsHeaders(origin) })
+    const acrh = request?.headers?.['access-control-request-headers']
+    return ok({ headers: corsHeaders(origin, acrh) })
 }
 
 const ALLOWED_ORIGINS = [
@@ -353,11 +356,37 @@ function corsHeaders(origin, requestHeaders = '') {
 
     return {
         'Access-Control-Allow-Origin': allowOrigin,
-        Vary: 'Origin',
+        Vary: 'Origin, Accept-Encoding',
         'Access-Control-Allow-Headers': allowHeaders,
+        'Access-Control-Expose-Headers': 'ETag', // Access-Control-Expose-Headers: ETag
+        'Access-Control-Allow-Headers': 'If-None-Match, If-Match', // Access-Control-Allow-Headers: If-None-Match, If-Match
         'Access-Control-Allow-Methods': 'POST, OPTIONS, PUT, GET, DELETE',
         'Access-Control-Max-Age': '86400'
     }
+}
+
+function getHeader(request, headerName) {
+    const headers = request?.headers
+    if (!headers) return undefined
+    return (
+        headers[headerName] ||
+        headers[String(headerName).toLowerCase()] ||
+        headers[String(headerName).toUpperCase()]
+    )
+}
+
+function ifNoneMatchMatches(ifNoneMatchHeader, etag) {
+    if (!ifNoneMatchHeader) return false
+    const header = String(ifNoneMatchHeader).trim()
+    if (!header) return false
+    if (header === '*') return true
+
+    const values = header
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean)
+
+    return values.includes(etag)
 }
 
 function getVimeoId(url) {
