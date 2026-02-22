@@ -56,7 +56,7 @@ export function ListItem({
 
     return (
         <Card className={cn('group w-full', className)} {...props}>
-            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <CardHeader className="flex flex-col gap-4">
                 <div className="flex w-full flex-col items-start">
                     <CardTitle className="pb-2">{title}</CardTitle>
                     <div className="flex gap-2">

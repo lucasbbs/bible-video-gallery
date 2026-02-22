@@ -46,11 +46,11 @@ export const SettingsSelector = () => {
       <PopoverTrigger asChild>
         <Button
           aria-label="Open settings"
-          className={`fixed top-40 right-4 ${openComponent === "settings" ? "z-60" : "z-30" } h-12 w-12 !rounded-full`}
+          className={`fixed top-40 right-4 ${openComponent === "settings" ? "z-60" : "z-30" } ${isMobile ? 'h-12 w-12' : 'h-fit w-fit px-5 py-2'} !rounded-full`}
           size="icon"
           variant="secondary"
         >
-          <SettingsIcon size={60} />
+          <SettingsIcon size={60} /> {isMobile ? null : <span>Settings</span>}
         </Button>
       </PopoverTrigger>
       {isMobile && open ? (

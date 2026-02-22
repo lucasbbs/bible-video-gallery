@@ -9,6 +9,7 @@ export type Sermon = {
     description: string
     audioUrl: string
     sermonPdf?: SermonPDFFile
+    bulletinPdf?: SermonPDFFile
     book: string
     chapter: number
     verses: string
@@ -25,6 +26,7 @@ export class SermonDTO {
     description: string
     audioUrl: string
     sermonPdfUrl?: string
+    sermonBulletinUrl?: string
     book: string
     chapter: number
     verses: string
@@ -38,6 +40,7 @@ export class SermonDTO {
         this.description = data.description
         this.audioUrl = data.audioUrl
         this.sermonPdfUrl = data.sermonPdf?.fileUrl
+        this.sermonBulletinUrl = data.bulletinPdf?.fileUrl
         this.book = data.book
         this.chapter = data.chapter
         this.verses = data.verses

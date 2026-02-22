@@ -390,6 +390,8 @@ export async function post_videos(request) {
             audioUrl = '',
             sermonPdfBase64 = '',
             sermonPdfName = 'sermon.pdf',
+            bulletinPdfBase64 = '',
+            bulletinPdfName = 'bulletin.pdf',
             sermonPath = '/sermons',
             description,
             createdAt = null,
@@ -402,6 +404,7 @@ export async function post_videos(request) {
         const collection = newDatabaseTable
 
         let sermonPdf = null
+        let bulletinPdf = null
 
         if (sermonPdfBase64) {
             const fileBuffer = b64ToBuffer(sermonPdfBase64)
@@ -423,6 +426,31 @@ export async function post_videos(request) {
             )
 
             sermonPdf = {
+                fileUrl: fileInfo.fileUrl,
+                internalName: fileInfo.fileName
+            }
+        }
+
+        if (bulletinPdfBase64) {
+            const fileBuffer = b64ToBuffer(bulletinPdfBase64)
+            const path = `${sermonPath}/${encodeURIComponent(book)}/bulletins`
+
+            const fileInfo = await mediaManager.upload(
+                path,
+                fileBuffer,
+                bulletinPdfName || 'bulletin.pdf',
+                {
+                    mediaOptions: {
+                        mediaType: 'document',
+                        mimeType: 'application/pdf'
+                    },
+                    metadataOptions: {
+                        context: { book, chapter, verses, title }
+                    }
+                }
+            )
+
+            bulletinPdf = {
                 fileUrl: fileInfo.fileUrl,
                 internalName: fileInfo.fileName
             }
@@ -458,6 +486,7 @@ export async function post_videos(request) {
             description,
             audioUrl,
             sermonPdf,
+            bulletinPdf,
             chapter,
             verses,
             tags: normalizedTags,
@@ -546,6 +575,8 @@ export async function put_videos(request) {
             audioUrl,
             sermonPdfBase64,
             sermonPdfName = 'sermon.pdf',
+            bulletinPdfBase64,
+            bulletinPdfName = 'bulletin.pdf',
             sermonPath = '/sermons',
             description,
             createdAt,
@@ -571,6 +602,7 @@ export async function put_videos(request) {
         }
 
         let sermonPdf = existing.sermonPdf || null
+        let bulletinPdf = existing.bulletinPdf || null
 
         // Re-upload PDF if provided
         if (sermonPdfBase64) {
@@ -593,6 +625,32 @@ export async function put_videos(request) {
             )
 
             sermonPdf = {
+                fileUrl: fileInfo.fileUrl,
+                internalName: fileInfo.fileName
+            }
+        }
+
+        // Re-upload bulletin PDF if provided
+        if (bulletinPdfBase64) {
+            const fileBuffer = b64ToBuffer(bulletinPdfBase64)
+            const path = `${sermonPath}/${encodeURIComponent(book)}/bulletins`
+
+            const fileInfo = await mediaManager.upload(
+                path,
+                fileBuffer,
+                bulletinPdfName,
+                {
+                    mediaOptions: {
+                        mediaType: 'document',
+                        mimeType: 'application/pdf'
+                    },
+                    metadataOptions: {
+                        context: { book, chapter, verses, title }
+                    }
+                }
+            )
+
+            bulletinPdf = {
                 fileUrl: fileInfo.fileUrl,
                 internalName: fileInfo.fileName
             }
@@ -643,12 +701,13 @@ export async function put_videos(request) {
         const updatedItem = {
             ...existing,
             title: getVimeoId(url) ?? existing.title,
-            preacher: preacher === undefined ? existing.preacher : preacher,
             videoLink: url ?? existing.videoLink,
             book,
+            preacher: preacher === undefined ? existing.preacher : preacher,
             description,
             audioUrl: audioUrl ?? existing.audioUrl,
             sermonPdf,
+            bulletinPdf,
             chapter,
             verses,
             tags: updatedTags === undefined ? existing.tags : updatedTags,
@@ -809,6 +868,42 @@ export async function delete_videos(request) {
             }
         }
 
+        // 2b) If it has a bulletin PDF, try to delete it too
+        let bulletinPdfDelete = {
+            attempted: false,
+            success: false,
+            used: null,
+            error: null
+        }
+        const bulletinPdf = existing.bulletinPdf
+        if (bulletinPdf && (bulletinPdf.internalName || bulletinPdf.fileUrl)) {
+            bulletinPdfDelete.attempted = true
+            try {
+                if (bulletinPdf.internalName) {
+                    await mediaManager.moveFilesToTrash(
+                        bulletinPdf.internalName
+                    )
+                    bulletinPdfDelete.success = true
+                    bulletinPdfDelete.used = {
+                        internalName: bulletinPdf.internalName
+                    }
+                } else if (bulletinPdf.fileUrl) {
+                    const last = new URL(bulletinPdf.fileUrl).pathname.split(
+                        '/'
+                    )
+                    if (last) {
+                        await mediaManager.moveFilesToTrash(last)
+                        bulletinPdfDelete.success = true
+                        bulletinPdfDelete.used = { derivedFromUrl: last }
+                    } else {
+                        throw new Error('Could not derive file id from fileUrl')
+                    }
+                }
+            } catch (e) {
+                bulletinPdfDelete.error = String(e?.message || e)
+            }
+        }
+
         // 3) Remove the DB record
         const removed = await wixData.remove(collection, id, {
             suppressAuth: true
@@ -821,6 +916,7 @@ export async function delete_videos(request) {
                 collection,
                 id,
                 pdfDelete,
+                bulletinPdfDelete,
                 removed: { _id: removed?._id ?? id }
             }
         })
@@ -1040,13 +1136,14 @@ export async function get_sermons(request) {
         const items = res.items.map((it) => ({
             id: it._id,
             collection: newDatabaseTable,
-            preacher: it.preacher || '',
             book: it.book || '',
             name: it.name || '',
+            preacher: it.preacher || '',
             description: it.description || '',
             url: it.videoLink || '',
             audioUrl: it.audioUrl || '',
             sermonPdf: it.sermonPdf || null,
+            bulletinPdf: it.bulletinPdf || null,
             createdAt: it.createdTime || it._createdDate,
             verses: it.verses,
             chapter: it.chapter,
