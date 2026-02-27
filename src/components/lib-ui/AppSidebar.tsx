@@ -127,6 +127,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       formLabel: "Preachers",
       placeholder: "Select Preacher",
     },
+  ];
+
+  const sidebarFilterOptions = [
+    {
+      label: 'Search by Scripture',
+      items: searchByScripturesMenuItems,
+      isOpen: isScriptureSearchOpen
+    },
+    {
+      label: 'Search by Preacher',
+      items: searchByPreacher,
+      isOpen: isPreacherSearchOpen
+    }
+    // We will add more filters here later
   ]
 
   return (
