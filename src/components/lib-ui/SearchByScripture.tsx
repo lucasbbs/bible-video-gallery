@@ -54,9 +54,10 @@ function SearchByScripture() {
                                     ).format(new Date(sermon.createdAt))}
                                     description={sermon.description}
                                     passage={sermon.description}
+                                    type={sermon.type}
                                 >
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                        <Dialog>
+                                        {sermon.videoLink ? <Dialog>
                                             <DialogTrigger asChild>
                                                 <Button
                                                     type="button"
@@ -68,7 +69,20 @@ function SearchByScripture() {
                                                 </Button>
                                             </DialogTrigger>
                                             <VideoModal id={sermon.uri} />
-                                        </Dialog>
+                                        </Dialog> : null }
+                                        {sermon.audioUrl ? (
+                                            <Button
+                                                type="button"
+                                                className="h-12 rounded-full px-4"
+                                                variant="secondary"
+                                                onClick={() => {
+                                                    window.open(sermon.audioUrl)
+                                                }}
+                                            >
+                                                <Headphones className="size-5" />
+                                                <span>Audio</span>
+                                            </Button>
+                                        ) : null}
                                         {sermon.sermonPdfUrl ? (
                                             <Button
                                                 type="button"
@@ -82,21 +96,6 @@ function SearchByScripture() {
                                             >
                                                 <NotebookText className="size-5" />
                                                 <span>Notes</span>
-                                            </Button>
-                                        ) : null}
-                                        {sermon.audioUrl ? (
-                                            <Button
-                                                type="button"
-                                                className="h-12 rounded-full px-4"
-                                                variant="secondary"
-                                                onClick={() => {
-                                                    window.open(
-                                                        sermon.audioUrl
-                                                    )
-                                                }}
-                                            >
-                                                <Headphones className="size-5" />
-                                                <span>Audio</span>
                                             </Button>
                                         ) : null}
                                         {sermon.sermonBulletinUrl ? (

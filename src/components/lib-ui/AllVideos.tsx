@@ -36,6 +36,8 @@ function AllVideos({ loading, setLoading }: AllVideosProps) {
         })()
     }, [pageSize, page])
 
+    console.log(sermons)
+
     return (
         <div className="grid gap-4 px-8">
             <ListItemAccordionProvider>
@@ -52,6 +54,7 @@ function AllVideos({ loading, setLoading }: AllVideosProps) {
                                     day: 'numeric'
                                 }).format(new Date(sermon.createdAt))}
                             passage={sermon.description}
+                            type={sermon.type}
                         >
                             <div className="flex gap-4">
                                 {sermon.audioUrl ? (

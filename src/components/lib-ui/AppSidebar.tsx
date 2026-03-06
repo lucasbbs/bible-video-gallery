@@ -21,12 +21,18 @@ import Selector from "@/components/lib-ui/Selector"
 import { useScriptureSearch } from "@/components/lib-ui/ScriptureSearchContext"
 import { cn } from "@/lib/utils"
 import {
+  CalendarIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   SearchIcon,
   UserSearchIcon
 } from "lucide-react"
 import ChurchSVG from "@/assets/church.svg"
+import DateRangePicker from "../ui/date-range-picker"
+
+const SIDEBAR_FILTERS_OPEN_KEY = "bible-video-gallery:sidebar-filters-open"
+const LEGACY_SCRIPTURE_OPEN_KEY = "bible-video-gallery:sidebar-scripture-search"
+const LEGACY_PREACHER_OPEN_KEY = "bible-video-gallery:sidebar-preacher-search"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state } = useSidebar()
@@ -43,66 +49,71 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     handleChapterChange,
     handlePreacherChange,
     handleTestamentChange,
+    selectedDateRange,
+    setSelectedDateRange
   } = useScriptureSearch()
 
-  const [isScriptureSearchOpen, setIsScriptureSearchOpen] = React.useState(false)
-  const [isPreacherSearchOpen, setIsPreacherSearchOpen] = React.useState(false)
+  const [openFilters, setOpenFilters] = React.useState<Record<string, boolean>>(
+    () => {
+      if (typeof window === "undefined") return {}
+
+      const nextState: Record<string, boolean> = {}
+
+      try {
+        const raw = localStorage.getItem(SIDEBAR_FILTERS_OPEN_KEY)
+        if (raw) {
+          const parsed: unknown = JSON.parse(raw)
+          if (parsed && typeof parsed === "object") {
+            for (const [key, value] of Object.entries(
+              parsed as Record<string, unknown>
+            )) {
+              if (typeof value === "boolean") nextState[key] = value
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      const legacyScripture = localStorage.getItem(LEGACY_SCRIPTURE_OPEN_KEY)
+      if (legacyScripture !== null && nextState.scripture === undefined) {
+        nextState.scripture = legacyScripture === "1"
+      }
+
+      const legacyPreacher = localStorage.getItem(LEGACY_PREACHER_OPEN_KEY)
+      if (legacyPreacher !== null && nextState.preacher === undefined) {
+        nextState.preacher = legacyPreacher === "1"
+      }
+
+      if (nextState.scripture === undefined) nextState.scripture = false
+      if (nextState.preacher === undefined) nextState.preacher = false
+
+      return nextState
+    }
+  )
+
+  const toggleFilterOpen = React.useCallback((filterId: string) => {
+    setOpenFilters((current) => ({
+      ...current,
+      [filterId]: !current[filterId],
+    }))
+  }, [])
 
   React.useEffect(() => {
-    localStorage.setItem(
-      "bible-video-gallery:sidebar-scripture-search",
-      isScriptureSearchOpen ? "1" : "0"
-    )
-  }, [isScriptureSearchOpen])
-
-  React.useEffect(() => {
-    localStorage.setItem(
-      "bible-video-gallery:sidebar-preacher-search",
-      isPreacherSearchOpen ? "1" : "0"
-    )
-  }, [isPreacherSearchOpen])
-
-  const searchByScripturesMenuItems = [
-    {
-      title: "By Testament",
-      form,
-      onChange: handleTestamentChange,
-      value: selectedTestament,
-      options: [
-        { value: "all", label: "All" },
-        { value: "old", label: "Old Testament" },
-        { value: "new", label: "New Testament" },
-        { value: "others", label: "Others" },
-      ],
-      formLabel: "By Testament*",
-      placeholder: "Select Testament",
-    },
-    {
-      title: "By Book",
-      form,
-      onChange: handleBookChange,
-      value: selectedBook,
-      options: books.map((book) => ({
-        value: book,
-        label: book,
-      })),
-      formLabel: "Books",
-      placeholder: "Select Book",
-    },
-    {
-      title: "By Chapter",
-      form,
-      onChange: (value: string) =>
-        handleChapterChange(value ? parseInt(value, 10) : 0),
-      value: selectedChapter === 0 ? "" : String(selectedChapter),
-      options: chapters.map((chapter) => ({
-        value: String(chapter),
-        label: `Chapter ${chapter}`,
-      })),
-      formLabel: "Chapters",
-      placeholder: "Select Chapter",
-    },
-  ]
+    try {
+      localStorage.setItem(SIDEBAR_FILTERS_OPEN_KEY, JSON.stringify(openFilters))
+      localStorage.setItem(
+        LEGACY_SCRIPTURE_OPEN_KEY,
+        openFilters.scripture ? "1" : "0"
+      )
+      localStorage.setItem(
+        LEGACY_PREACHER_OPEN_KEY,
+        openFilters.preacher ? "1" : "0"
+      )
+    } catch {
+      // ignore
+    }
+  }, [openFilters])
 
   const preachers = [
     {label: 'Bruce Arthur', value: 'bruce_arthur'},
@@ -110,37 +121,110 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {label: 'Guest', value: 'guest'}
   ]
 
-  const searchByPreacher = [
-    {
-      title: "By Preacher",
-      form,
-      onChange: (value: string) =>
-        handlePreacherChange(value === "all" ? "" : value),
-      value: preacher || "all",
-      options: [
-        { value: "all", label: "All" },
-        ...preachers.map((preacher) => ({
-          value: preacher.value,
-          label: preacher.label,
-        })),
-      ],
-      formLabel: "Preachers",
-      placeholder: "Select Preacher",
-    },
-  ];
-
   const sidebarFilterOptions = [
     {
-      label: 'Search by Scripture',
-      items: searchByScripturesMenuItems,
-      isOpen: isScriptureSearchOpen
+      id: "scripture",
+      label: "Search by Scripture",
+      Icon: SearchIcon,
+      items: [
+        {
+          key: "testament",
+          element: (
+            <Selector
+              form={form}
+              onChange={handleTestamentChange}
+              value={selectedTestament}
+              options={[
+                { value: "all", label: "All" },
+                { value: "old", label: "Old Testament" },
+                { value: "new", label: "New Testament" },
+                { value: "others", label: "Others" },
+              ]}
+              formLabel="By Testament*"
+              placeholder="Select Testament"
+            />
+          ),
+        },
+        {
+          key: "book",
+          element: (
+            <Selector
+              form={form}
+              onChange={handleBookChange}
+              value={selectedBook}
+              options={books.map((book) => ({
+                value: book,
+                label: book,
+              }))}
+              formLabel="Books"
+              placeholder="Select Book"
+            />
+          ),
+        },
+        {
+          key: "chapter",
+          element: (
+            <Selector
+              form={form}
+              onChange={(value: string) =>
+                handleChapterChange(value ? parseInt(value, 10) : 0)
+              }
+              value={selectedChapter === 0 ? "" : String(selectedChapter)}
+              options={chapters.map((chapter) => ({
+                value: String(chapter),
+                label: `Chapter ${chapter}`,
+              }))}
+              formLabel="Chapters"
+              placeholder="Select Chapter"
+            />
+          ),
+        },
+      ],
     },
     {
-      label: 'Search by Preacher',
-      items: searchByPreacher,
-      isOpen: isPreacherSearchOpen
+      id: "preacher",
+      label: "Search by Preacher",
+      Icon: UserSearchIcon,
+      items: [
+        {
+          key: "preacher",
+          element: (
+            <Selector
+              form={form}
+              onChange={(value: string) =>
+                handlePreacherChange(value === "all" ? "" : value)
+              }
+              value={preacher || "all"}
+              options={[
+                { value: "all", label: "All" },
+                ...preachers.map((preacher) => ({
+                  value: preacher.value,
+                  label: preacher.label,
+                })),
+              ]}
+              formLabel="Preachers"
+              placeholder="Select Preacher"
+            />
+          ),
+        },
+      ],
+    },
+    {
+      id: "date",
+      label: "Search by Date",
+      Icon: CalendarIcon,
+      items: [
+        {
+          key: "date",
+          element: (
+            <DateRangePicker
+              dateRange={selectedDateRange}
+              setDateRange={setSelectedDateRange}
+            />
+          )
+        }
+      ]
     }
-    // We will add more filters here later
   ]
 
   return (
@@ -171,112 +255,62 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent className="flex flex-col gap-2">
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    tooltip="Search by Scripture"
-                    onClick={() => setIsScriptureSearchOpen((open) => !open)}
-                    className={cn("justify-between", isCollapsed && "justify-center")}
-                  >
-                    {isCollapsed ? (
-                      <SearchIcon />
-                    ) : (
-                      <>
-                        <span className="flex min-w-0 items-center gap-2">
-                          <SearchIcon />
-                          <span className="truncate">Search by Scripture</span>
-                        </span>
-                        {isScriptureSearchOpen ? (
-                          <ChevronDownIcon className="opacity-70" />
-                        ) : (
-                          <ChevronRightIcon className="opacity-70" />
-                        )}
-                      </>
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
+          {sidebarFilterOptions.map((filter) => {
+            const isOpen = !!openFilters[filter.id]
 
-              {isScriptureSearchOpen ? (
-                <SidebarMenuSub className="gap-3 py-2">
-                  <SidebarMenuSubItem>
-                    <Form {...form}>
-                      <form className="w-auto space-y-4">
-                        <div className="flex flex-col gap-4">
-                          {searchByScripturesMenuItems.map((item) => (
-                            <Selector
-                              key={item.title}
-                              form={item.form}
-                              onChange={item.onChange}
-                              value={item.value}
-                              options={item.options}
-                              formLabel={item.formLabel}
-                              placeholder={item.placeholder}
-                            />
-                          ))}
-                        </div>
-                      </form>
-                    </Form>
-                  </SidebarMenuSubItem>
-                </SidebarMenuSub>
-              ) : null}
-            </SidebarGroupContent>
-          </SidebarGroup>
-          <SidebarGroup>
-            <SidebarGroupContent className="flex flex-col gap-2">
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    tooltip="Search by Preacher"
-                    onClick={() => setIsPreacherSearchOpen((open) => !open)}
-                    className={cn("justify-between", isCollapsed && "justify-center")}
-                  >
-                    {isCollapsed ? (
-                      <UserSearchIcon />
-                    ) : (
-                      <>
-                        <span className="flex min-w-0 items-center gap-2">
-                          <UserSearchIcon />
-                          <span className="truncate">Search by Preacher</span>
-                        </span>
-                        {isPreacherSearchOpen ? (
-                          <ChevronDownIcon className="opacity-70" />
-                        ) : (
-                          <ChevronRightIcon className="opacity-70" />
+            return (
+              <SidebarGroup key={filter.id}>
+                <SidebarGroupContent className="flex flex-col gap-2">
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        tooltip={filter.label}
+                        onClick={() => toggleFilterOpen(filter.id)}
+                        className={cn(
+                          "justify-between",
+                          isCollapsed && "justify-center"
                         )}
-                      </>
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
+                      >
+                        {isCollapsed ? (
+                          <filter.Icon />
+                        ) : (
+                          <>
+                            <span className="flex min-w-0 items-center gap-2">
+                              <filter.Icon />
+                              <span className="truncate">{filter.label}</span>
+                            </span>
+                            {isOpen ? (
+                              <ChevronDownIcon className="opacity-70" />
+                            ) : (
+                              <ChevronRightIcon className="opacity-70" />
+                            )}
+                          </>
+                        )}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
 
-              {isPreacherSearchOpen ? (
-                <SidebarMenuSub className="gap-3 py-2">
-                  <SidebarMenuSubItem>
-                    <Form {...form}>
-                      <form className="w-auto space-y-4">
-                        <div className="flex flex-col gap-4">
-                          {searchByPreacher.map((item) => (
-                            <Selector
-                              key={item.title}
-                              form={item.form}
-                              onChange={item.onChange}
-                              value={item.value}
-                              options={item.options}
-                              formLabel={item.formLabel}
-                              placeholder={item.placeholder}
-                            />
-                          ))}
-                        </div>
-                      </form>
-                    </Form>
-                  </SidebarMenuSubItem>
-                </SidebarMenuSub>
-              ) : null}
-            </SidebarGroupContent>
-          </SidebarGroup>
+                  {isOpen ? (
+                    <SidebarMenuSub className="gap-3 py-2">
+                      <SidebarMenuSubItem>
+                        <Form {...form}>
+                          <form className="w-auto space-y-4">
+                            <div className="flex flex-col gap-4">
+                              {filter.items.map((item) => (
+                                <React.Fragment key={item.key}>
+                                  {item.element}
+                                </React.Fragment>
+                              ))}
+                            </div>
+                          </form>
+                        </Form>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  ) : null}
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )
+          })}
           <SidebarSeparator />
 
         </SidebarContent>

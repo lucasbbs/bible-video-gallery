@@ -48,7 +48,30 @@ export async function get_videos(request) {
             return Math.floor(n)
         }
 
+        const parseDateParam = (value, boundary = 'start') => {
+            const s = normalizeStringParam(value)
+            if (!s) return null
+
+            // Prefer a stable date-only format (YYYY-MM-DD) and interpret as UTC
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+                const iso =
+                    boundary === 'end'
+                        ? `${s}T23:59:59.999Z`
+                        : `${s}T00:00:00.000Z`
+                const d = new Date(iso)
+                if (Number.isNaN(d.getTime())) return null
+                return d
+            }
+
+            const d = new Date(s)
+            if (Number.isNaN(d.getTime())) return null
+            return d
+        }
+
         const book = normalizeStringParam(q.book)
+        const type = normalizeStringParam(q.type)
+        let startDate = parseDateParam(q.dateFrom, 'start')
+        let endDate = parseDateParam(q.dateTo, 'end')
         const chapter = parseNullablePositiveInt(q.chapter)
         const preacher = normalizeStringParam(q.preacher)
         const page = parsePositiveInt(q.page, 1)
@@ -57,6 +80,12 @@ export async function get_videos(request) {
             String(firstQueryValue(q.include_chapters) || '')
                 .trim()
                 .toLowerCase() === '1'
+
+        if (startDate && endDate && startDate > endDate) {
+            const tmp = startDate
+            startDate = endDate
+            endDate = tmp
+        }
 
         const match = String(q.match || 'any').toLowerCase() // 'any' | 'all'
         const rawTags = q.tags
@@ -142,9 +171,20 @@ export async function get_videos(request) {
         }
 
         let builder = wixData.query(newDatabaseTable)
+        if (type === 'bible_studies') {
+            builder = builder.eq('isBibleStudy', true)
+        } else if (type === 'sermons') {
+            // During migration, treat missing/other values as "sermons"
+            builder =
+                typeof builder.ne === 'function'
+                    ? builder.ne('isBibleStudy', true)
+                    : builder.eq('isBibleStudy', false)
+        }
         if (book) builder = builder.eq('book', book)
         if (preacher) builder = builder.eq('preacher', preacher)
         if (chapter != null) builder = builder.eq('chapter', chapter)
+        if (startDate) builder = builder.ge('createdTime', startDate)
+        if (endDate) builder = builder.le('createdTime', endDate)
         builder = applyTagsFilter(builder)
 
         const query = await builder
@@ -167,6 +207,20 @@ export async function get_videos(request) {
             let chaptersBuilder = wixData
                 .query(newDatabaseTable)
                 .eq('book', book)
+            if (type === 'bible_studies') {
+                chaptersBuilder = chaptersBuilder.eq('type', 'bible_studies')
+            } else if (type === 'sermons') {
+                chaptersBuilder =
+                    typeof chaptersBuilder.ne === 'function'
+                        ? chaptersBuilder.ne('type', 'bible_studies')
+                        : chaptersBuilder.eq('type', 'sermons')
+            }
+            if (preacher)
+                chaptersBuilder = chaptersBuilder.eq('preacher', preacher)
+            if (startDate)
+                chaptersBuilder = chaptersBuilder.ge('createdTime', startDate)
+            if (endDate)
+                chaptersBuilder = chaptersBuilder.le('createdTime', endDate)
             chaptersBuilder = applyTagsFilter(chaptersBuilder)
 
             do {
@@ -223,6 +277,7 @@ export async function get_videos(request) {
 
             return {
                 ...item,
+                type: item.isBibleStudy ? 'bible_studies' : 'sermons',
                 chapter: chapterValue,
                 sermonTagsId: item?.sermonTagsId || null,
                 tags:
@@ -333,7 +388,8 @@ const ALLOWED_ORIGINS = [
     'https://bible-video-gallery-submit-form.netlify.app',
     'https://campbell-sermon-gallery-v2.netlify.app',
     'https://fascinating-fudge-8a8c5a.netlify.app',
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'https://manage-sermons.campbellbaptist.org'
 ] // whitelist
 function corsHeaders(origin, requestHeaders = '') {
     const allowOrigin = ALLOWED_ORIGINS.includes(origin)
@@ -343,7 +399,9 @@ function corsHeaders(origin, requestHeaders = '') {
     const defaultAllow = [
         'Content-Type',
         'Authorization',
-        'X-HTTP-Method-Override'
+        'X-HTTP-Method-Override',
+        'If-None-Match',
+        'If-Match'
     ]
     const requested = String(requestHeaders)
         .split(',')
@@ -359,7 +417,6 @@ function corsHeaders(origin, requestHeaders = '') {
         Vary: 'Origin, Accept-Encoding',
         'Access-Control-Allow-Headers': allowHeaders,
         'Access-Control-Expose-Headers': 'ETag', // Access-Control-Expose-Headers: ETag
-        'Access-Control-Allow-Headers': 'If-None-Match, If-Match', // Access-Control-Allow-Headers: If-None-Match, If-Match
         'Access-Control-Allow-Methods': 'POST, OPTIONS, PUT, GET, DELETE',
         'Access-Control-Max-Age': '86400'
     }
@@ -1204,6 +1261,50 @@ export async function get_sermons(request) {
             headers: corsHeaders(origin),
             body: {
                 error: 'Failed to search sermons',
+                details: String(err?.message || err)
+            }
+        })
+    }
+}
+
+const manageRolesTable = 'manageRoles'
+
+export function options_manage_roles(request) {
+    const origin = request.headers?.origin
+    const reqHeaders = request.headers?.['access-control-request-headers']
+    return ok({
+        headers: corsHeaders(origin, reqHeaders)
+    })
+}
+
+export async function post_manage_roles(request) {
+    const origin = request?.headers?.origin
+    const body = await request.body.json().catch(() => null)
+    const userId = body.user_id
+    try {
+        const result = await wixData
+            .query(manageRolesTable)
+            .eq('user_id', userId)
+            .limit(1)
+            .find()
+
+        const isUserAdmin = (result?.items?.length ?? 0) > 0
+        return ok({
+            headers: {
+                'Content-Type': 'application/json',
+                ...corsHeaders(origin)
+            },
+            body: {
+                isUserAdmin,
+                userId,
+                result
+            }
+        })
+    } catch (err) {
+        return serverError({
+            headers: corsHeaders(origin),
+            body: {
+                error: '',
                 details: String(err?.message || err)
             }
         })

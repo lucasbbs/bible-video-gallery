@@ -2,16 +2,22 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useState,
   type ReactNode,
 } from "react"
 import { useForm } from "react-hook-form"
-import { useLocation, useNavigate } from "react-router"
 
 import { Sermon, SermonDTO } from "@/dtos/sermon.dto"
 import { getVideos } from "@/services/videos"
 import { allBooks, newTestament, oldTestament } from "@/shared/books"
+import { DateRange } from "react-day-picker"
+
+function formatDateParam(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
 
 type ScriptureSearchContextValue = {
   form: ReturnType<typeof useForm>
@@ -26,6 +32,8 @@ type ScriptureSearchContextValue = {
   page: number
   pageSize: number
   preacher: string
+  selectedDateRange: DateRange | undefined
+  setSelectedDateRange: (range: DateRange | undefined) => void
   handleTestamentChange: (value: string) => void
   handleBookChange: (value: string) => void
   handleChapterChange: (value: number) => void
@@ -48,11 +56,23 @@ export function useScriptureSearch() {
 
 type ScriptureSearchProviderProps = {
   setLoading: (loading: boolean) => void
+  page: number
+  pageSize: number
+  type: string
+  selectedDateRange: DateRange | undefined
+  onSetSelectedDateRange: (range: DateRange | undefined) => void
+  onResetPage: () => void
   children: ReactNode
 }
 
 export function ScriptureSearchProvider({
   setLoading,
+  page,
+  pageSize,
+  type,
+  selectedDateRange,
+  onSetSelectedDateRange,
+  onResetPage,
   children,
 }: ScriptureSearchProviderProps) {
   const form = useForm()
@@ -66,15 +86,6 @@ export function ScriptureSearchProvider({
   const [total, setTotal] = useState(0)
   const [preacher, setPreacher] = useState('')
 
-  const navigate = useNavigate()
-  const location = useLocation()
-  const searchParams = useMemo(
-    () => new URLSearchParams(location.search),
-    [location.search]
-  )
-  const page = parseInt(searchParams.get("page") || "1")
-  const pageSize = parseInt(searchParams.get("pageSize") || "5")
-
   const resetForm = (optionSelected: string[]) => {
     form.reset()
     setBooks(optionSelected)
@@ -84,16 +95,6 @@ export function ScriptureSearchProvider({
     setSelectedChapter(0)
     setSermons([])
     setTotal(0)
-  }
-
-  const resetPageInUrl = () => {
-    const nextParams = new URLSearchParams(location.search)
-    if (!nextParams.has("page")) {
-      return
-    }
-    nextParams.delete("page")
-    const qs = nextParams.toString()
-    navigate(qs ? `${location.pathname}?${qs}` : location.pathname)
   }
 
   const handleTestamentChange = (value: string) => {
@@ -110,7 +111,7 @@ export function ScriptureSearchProvider({
       setShowOther(true)
       resetForm([])
     }
-    resetPageInUrl()
+    onResetPage()
     setSelectedTestament(value)
   }
 
@@ -120,7 +121,7 @@ export function ScriptureSearchProvider({
     setSelectedChapter(0)
     setSermons([])
     setTotal(0)
-    resetPageInUrl()
+    onResetPage()
   }
 
   const handleChapterChange = (value: number) => {
@@ -132,8 +133,13 @@ export function ScriptureSearchProvider({
     setSelectedChapter(0)
     setSermons([])
     setTotal(0)
-    resetPageInUrl()
+    onResetPage()
   }
+
+  const dateFrom = selectedDateRange?.from
+    ? formatDateParam(selectedDateRange.from)
+    : null
+  const dateTo = selectedDateRange?.to ? formatDateParam(selectedDateRange.to) : null
 
   useEffect(() => {
     if (showOther) {
@@ -152,15 +158,16 @@ export function ScriptureSearchProvider({
     ;(async () => {
       setLoading(true)
       const book = showOther ? "others" : selectedBook === "" ? null : selectedBook
-      const hasFilters = showOther || selectedBook !== "" || preacher !== "" ? 1 : 0
+      const hasFilters =
+        showOther || selectedBook !== "" || preacher !== "" || dateFrom || dateTo ? 1 : 0
       const {
         data: { videos, total },
-      } = await getVideos(book, page, pageSize, preacher, hasFilters)
+      } = await getVideos(book, page, pageSize, preacher, hasFilters, type, dateFrom, dateTo)
       setTotal(total)
       setSermons(videos.map((sermon: Sermon) => SermonDTO.from(sermon)))
       setLoading(false)
     })()
-  }, [page, pageSize, selectedBook, showOther, setLoading, preacher])
+  }, [page, pageSize, selectedBook, showOther, setLoading, preacher, type, dateFrom, dateTo])
 
   const contextValue: ScriptureSearchContextValue = {
     form,
@@ -179,6 +186,9 @@ export function ScriptureSearchProvider({
     handleBookChange,
     handleChapterChange,
     handlePreacherChange,
+    selectedDateRange,
+    setSelectedDateRange: onSetSelectedDateRange,
+
   }
 
   return (

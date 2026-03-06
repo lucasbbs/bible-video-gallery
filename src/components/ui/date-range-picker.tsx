@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { CalendarIcon, ChevronDownIcon, XIcon } from 'lucide-react'
+import { ChevronDownIcon, XIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -13,18 +13,18 @@ import {
     PopoverTrigger
 } from '@/components/ui/popover'
 import { DateRange } from 'react-day-picker'
-import {
-    addDays,
-    addMonths,
-    endOfMonth,
-    endOfYear,
-    startOfMonth,
-    startOfYear,
-    subDays,
-    subMonths,
-    subYears
-} from 'date-fns'
-import { Card, CardContent, CardFooter } from './card'
+// import {
+//     addDays,
+//     addMonths,
+//     endOfMonth,
+//     endOfYear,
+//     startOfMonth,
+//     startOfYear,
+//     subDays,
+//     subMonths,
+//     subYears
+// } from 'date-fns'
+import { Card, CardContent } from './card'
 
 type DatePickerProps = {
     dateRange: DateRange | undefined
@@ -34,61 +34,61 @@ type DatePickerProps = {
 const DateRangePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
     const today = new Date()
 
-    const yesterday = {
-        from: subDays(today, 1),
-        to: subDays(today, 1)
-    }
+    // const yesterday = {
+    //     from: subDays(today, 1),
+    //     to: subDays(today, 1)
+    // }
 
-    const tomorrow = {
-        from: today,
-        to: addDays(today, 1)
-    }
+    // const tomorrow = {
+    //     from: today,
+    //     to: addDays(today, 1)
+    // }
 
-    const last7Days = {
-        from: subDays(today, 6),
-        to: today
-    }
+    // const last7Days = {
+    //     from: subDays(today, 6),
+    //     to: today
+    // }
 
-    const next7Days = {
-        from: addDays(today, 1),
-        to: addDays(today, 7)
-    }
+    // const next7Days = {
+    //     from: addDays(today, 1),
+    //     to: addDays(today, 7)
+    // }
 
-    const last30Days = {
-        from: subDays(today, 29),
-        to: today
-    }
+    // const last30Days = {
+    //     from: subDays(today, 29),
+    //     to: today
+    // }
 
-    const monthToDate = {
-        from: startOfMonth(today),
-        to: today
-    }
+    // const monthToDate = {
+    //     from: startOfMonth(today),
+    //     to: today
+    // }
 
-    const lastMonth = {
-        from: startOfMonth(subMonths(today, 1)),
-        to: endOfMonth(subMonths(today, 1))
-    }
+    // const lastMonth = {
+    //     from: startOfMonth(subMonths(today, 1)),
+    //     to: endOfMonth(subMonths(today, 1))
+    // }
 
-    const nextMonth = {
-        from: startOfMonth(addMonths(today, 1)),
-        to: endOfMonth(addMonths(today, 1))
-    }
+    // const nextMonth = {
+    //     from: startOfMonth(addMonths(today, 1)),
+    //     to: endOfMonth(addMonths(today, 1))
+    // }
 
-    const yearToDate = {
-        from: startOfYear(today),
-        to: today
-    }
+    // const yearToDate = {
+    //     from: startOfYear(today),
+    //     to: today
+    // }
 
-    const lastYear = {
-        from: startOfYear(subYears(today, 1)),
-        to: endOfYear(subYears(today, 1))
-    }
+    // const lastYear = {
+    //     from: startOfYear(subYears(today, 1)),
+    //     to: endOfYear(subYears(today, 1))
+    // }
 
     const [month, setMonth] = useState(today)
     const [open, setOpen] = useState(false)
 
     return (
-        <div className="w-xs space-y-2">
+        <div className="flex flex-col space-y-2">
             <Label htmlFor="date" className="px-1">
                 Date range
             </Label>
@@ -97,21 +97,31 @@ const DateRangePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
                     <Button
                         variant="outline"
                         id="date"
-                        className="w-full justify-between font-normal"
+                        className="w-full h-fit justify-between font-normal"
                     >
                         <span className="flex items-center">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
                             {dateRange && dateRange.from && dateRange.to
-                                ? `${dateRange.from.toLocaleDateString(
-                                      'en'
-                                  )} - ${dateRange.to.toLocaleDateString('en')}`
+                                ? <div><div>
+                                {dateRange.from.toLocaleDateString(
+                                      'en', {
+                                        year: '2-digit',
+                                        month: '2-digit',
+                                        day: '2-digit'
+                                      }
+                                  )}</div> 
+                                  <div>{dateRange.to.toLocaleDateString('en', {
+                                      year: '2-digit',
+                                      month: '2-digit',
+                                      day: '2-digit'
+                                  })}
+                                  </div></div>
                                 : 'Pick a date'}
                         </span>
                         <div className="flex items-center space-x-2">
                             {dateRange && (
                                 <Button
                                     variant="outline"
-                                    className="border-0 shadow-none p-0"
+                                    className="border-0 shadow-none !p-1"
                                     onClick={() => setDateRange(undefined)}
                                 >
                                     <XIcon />
@@ -124,9 +134,11 @@ const DateRangePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
                 <PopoverContent
                     className="w-auto overflow-hidden p-0"
                     align="start"
+                    // side="right"
+                    // sideOffset={8}
                 >
-                    <Card className="max-w-xs py-4">
-                        <CardContent className="px-4">
+                    <Card className="max-w-xs py-6 px-0">
+                        <CardContent className="">
                             <Calendar
                                 mode="range"
                                 selected={dateRange}
@@ -137,10 +149,10 @@ const DateRangePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
                                 }}
                                 month={month}
                                 onMonthChange={setMonth}
-                                className="rounded-lg border w-2xs"
+                                className="rounded-lg border w-60"
                             />
                         </CardContent>
-                        <CardFooter className="flex flex-wrap gap-2 border-t px-4 !pt-4">
+                        {/* <CardFooter className="flex flex-wrap gap-2 border-t px-4 !pt-4">
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -254,7 +266,7 @@ const DateRangePicker = ({ dateRange, setDateRange }: DatePickerProps) => {
                             >
                                 Last year
                             </Button>
-                        </CardFooter>
+                        </CardFooter> */}
                     </Card>
                 </PopoverContent>
             </Popover>

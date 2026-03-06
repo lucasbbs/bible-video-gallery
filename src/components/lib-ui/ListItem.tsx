@@ -8,7 +8,7 @@ import {
 } from 'react'
 import { cn } from '@/lib/utils'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
-import { BookOpen, Calendar } from 'lucide-react'
+import { BookOpen, Calendar, BookMarked, Mic } from 'lucide-react'
 
 type ListItemAccordionContextValue = {
     openItemId: string | null
@@ -20,6 +20,24 @@ const ListItemAccordionContext =
 
 type ListItemAccordionProviderProps = {
     children: ReactNode
+}
+
+const SermonBadge = () => {
+    return (
+        <div className="flex items-center gap-1 rounded-full bg-red-100 mt-2 px-2 py-0.5 text-xs font-medium text-red-800">
+            <Mic className="size-4" />
+            <span>Sermon</span>
+        </div>
+    )
+}
+
+const BibleStudyBadge = () => {
+    return (
+        <div className="flex items-center gap-1 rounded-full bg-orange-100 mt-2 px-2 py-0.5 text-xs font-medium text-orange-800">
+            <BookMarked className="size-4" />
+            <span>Bible Study</span>
+        </div>
+    )
 }
 
 export function ListItemAccordionProvider({
@@ -43,6 +61,7 @@ type CardProps = ComponentProps<typeof Card> & {
     itemId?: string
     createdTime: string
     passage: string
+    type: string
 }
 
 export function ListItem({
@@ -51,11 +70,12 @@ export function ListItem({
     children,
     createdTime,
     passage,
+    type,
     ...props
 }: CardProps) {
 
     return (
-        <Card className={cn('group w-full', className)} {...props}>
+        <Card className={cn(`group w-full border-l-4 ${type === 'sermons' ? 'border-l-red-300' : 'border-l-orange-300'}`, className)} {...props}>
             <CardHeader className="flex flex-col gap-4">
                 <div className="flex w-full flex-col items-start">
                     <CardTitle className="pb-2">{title}</CardTitle>
@@ -66,6 +86,7 @@ export function ListItem({
                         <BookOpen size={18} />
                         <small>{passage}</small>
                     </div>
+                    <div>{type === 'sermons' ? <SermonBadge /> : <BibleStudyBadge />}</div>
                 </div>
                 {children ? (
                     <>

@@ -2,6 +2,8 @@ type SermonPDFFile = {
     fileUrl: string
 }
 
+export type SermonType = 'sermons' | 'bible_studies'
+
 export type Sermon = {
     uri: string
     title: string
@@ -14,6 +16,7 @@ export type Sermon = {
     chapter: number
     verses: string
     videoLink: string
+    type: SermonType
     _id: string
     createdTime?: string
     created_time?: string
@@ -31,6 +34,7 @@ export class SermonDTO {
     chapter: number
     verses: string
     videoLink: string
+    type: SermonType
     _id: string
     createdAt: string
     updatedAt: string
@@ -45,6 +49,7 @@ export class SermonDTO {
         this.chapter = data.chapter
         this.verses = data.verses
         this.videoLink = data.videoLink
+        this.type = data.type
         this._id = data._id
         this.createdAt = data.createdTime || data.created_time || ''
         this.updatedAt = data.updatedAt

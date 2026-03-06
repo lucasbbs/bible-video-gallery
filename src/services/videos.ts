@@ -6,9 +6,12 @@ export const getVideos = async (
     page: number | null,
     per_page: number | null,
     preacher: string | null,
-    has_filters = 1
+    has_filters = 1,
+    type: string | null = null,
+    dateFrom: string | null = null,
+    dateTo: string | null = null
 ) => {
-    const url = `/videos?book=${book}&page=${page}&per_page=${per_page}&preacher=${preacher}&has_filters=${has_filters}`
+    const url = `/videos?book=${book}&page=${page}&per_page=${per_page}&preacher=${preacher}&has_filters=${has_filters}&type=${type}&dateFrom=${dateFrom}&dateTo=${dateTo}`
 
     const cacheKey = buildEtagCacheKey(api.defaults.baseURL, url)
     const cached = readEtagCache<unknown>(cacheKey)
