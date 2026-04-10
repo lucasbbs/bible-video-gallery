@@ -9,6 +9,8 @@ import { Dialog, DialogTrigger } from '../../components/ui/dialog'
 import { Button } from '../../components/ui/button'
 import { VideoModal } from '../../components/lib-ui/VideoModal'
 import { PaginationWithLinks } from './VideosPagination'
+import { MediaModal } from './MediaModal'
+import { PdfModal } from './PdfModal'
 
 function SearchByScripture() {
     const {
@@ -71,32 +73,33 @@ function SearchByScripture() {
                                             <VideoModal id={sermon.uri} />
                                         </Dialog> : null }
                                         {sermon.audioUrl ? (
+                                            <Dialog>
+                                                <DialogTrigger asChild>
                                             <Button
                                                 type="button"
                                                 className="h-12 rounded-full px-4"
-                                                variant="secondary"
-                                                onClick={() => {
-                                                    window.open(sermon.audioUrl)
-                                                }}
-                                            >
+                                                variant="secondary">
                                                 <Headphones className="size-5" />
                                                 <span>Audio</span>
                                             </Button>
+                                            </DialogTrigger>
+                                            <MediaModal url={sermon.audioUrl} />
+                                            </Dialog>
                                         ) : null}
                                         {sermon.sermonPdfUrl ? (
+                                            <Dialog>
+                                                <DialogTrigger asChild>
                                             <Button
                                                 type="button"
                                                 className="h-12 rounded-full px-4"
-                                                onClick={async () => {
-                                                    await openPdfFile(
-                                                        sermon.sermonPdfUrl
-                                                    )
-                                                }}
                                                 variant="secondary"
                                             >
                                                 <NotebookText className="size-5" />
                                                 <span>Notes</span>
                                             </Button>
+                                            </DialogTrigger>
+                                            <PdfModal url={sermon.sermonPdfUrl} />
+                                            </Dialog>
                                         ) : null}
                                         {sermon.sermonBulletinUrl ? (
                                             <Button

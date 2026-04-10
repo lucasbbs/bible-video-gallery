@@ -1,5 +1,6 @@
 type SermonPDFFile = {
     fileUrl: string
+    internalName?: string
 }
 
 export type SermonType = 'sermons' | 'bible_studies'
@@ -10,8 +11,8 @@ export type Sermon = {
     name: string
     description: string
     audioUrl: string
-    sermonPdf?: SermonPDFFile
-    bulletinPdf?: SermonPDFFile
+    sermonPdf?: SermonPDFFile | null
+    bulletinPdf?: SermonPDFFile | null
     book: string
     chapter: number
     verses: string
