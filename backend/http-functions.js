@@ -11,6 +11,66 @@ import crypto from 'crypto'
 
 const newDatabaseTable = 'sermons'
 const sermonTagsCollection = 'sermon_tags'
+const teachersDatabaseTable = 'sunday_school_teachers'
+
+export async function get_teachers(request) {
+    const origin = request?.headers?.origin
+    const options = {
+        headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders(origin),
+            'Cache-Control': 'public, max-age=3600, s-maxage=3600'
+        }
+    }
+
+    try {
+        const results = await wixData.query(teachersDatabaseTable).find()
+        options.body = { items: results.items.map(item => ({
+            id: item._id, name: item.title, createdAt: item._createdDate
+        })) }
+        return ok(options)
+    } catch (error) {
+        options.body = { error: error.message }
+        return serverError(options)
+    }
+}
+
+export function options_teachers(request) {
+    const origin = request?.headers?.origin
+    const acrh = request?.headers?.['access-control-request-headers']
+    return ok({ headers: corsHeaders(origin, acrh) })
+}
+
+export async function post_teachers(request) {
+   const origin = request?.headers?.origin
+    try {
+        const payload = await request.body.json().catch(() => null)
+
+        if (!payload)
+            return badRequest({ body: { error: 'Invalid JSON body.' } })
+
+        const { name } = payload
+
+        const collection = teachersDatabaseTable
+
+        const item = { title: name }
+        const saved = await wixData.insert(collection, item, {
+            suppressAuth: true
+        })
+        return ok({
+            body: { success: true, collection, id: saved._id, item: saved },
+            headers: corsHeaders(origin)
+        })
+    } catch (err) {
+        return serverError({
+            body: {
+                error: 'Internal error',
+                details: String(err?.message || err)
+            },
+            headers: corsHeaders(origin)
+        })
+    }
+}
 
 export async function get_videos(request) {
     const origin = request?.headers?.origin
@@ -446,7 +506,24 @@ function ifNoneMatchMatches(ifNoneMatchHeader, etag) {
     return values.includes(etag)
 }
 
+function resolveIsBibleStudy(rawFlag, rawType) {
+    if (typeof rawFlag === 'boolean') {
+        return rawFlag
+    }
+    if (typeof rawType === 'string') {
+        const normalized = rawType.trim().toLowerCase()
+        return (
+            normalized === 'bible_studies' ||
+            normalized === 'bible-study' ||
+            normalized === 'biblestudy' ||
+            normalized === 'bible study'
+        )
+    }
+    return false
+}
+
 function getVimeoId(url) {
+    if (typeof url !== 'string') return null
     const match = url.match(/vimeo\.com\/(\d+)/)
     return match ? match[1] : null
 }
@@ -470,7 +547,7 @@ export async function post_videos(request) {
             book,
             chapter = null,
             verses = null,
-            url,
+            videoLink,
             title = '',
             preacher = '',
             audioUrl = '',
@@ -481,11 +558,24 @@ export async function post_videos(request) {
             sermonPath = '/sermons',
             description,
             createdAt = null,
-            tags
+            tags,
+            type: requestType,
+            isBibleStudy: requestIsBibleStudy
         } = payload
 
-        if (!book || !url)
-            return badRequest({ body: { error: 'book and url are required.' } })
+        const isBibleStudy = resolveIsBibleStudy(
+            requestIsBibleStudy,
+            requestType
+        )
+        const normalizedUrl = typeof videoLink === 'string' ? videoLink.trim() : ''
+
+        if (!book || (!isBibleStudy && !normalizedUrl)) {
+            return badRequest({
+                body: {
+                    error: 'book is required and video link is required for sermons.'
+                }
+            })
+        }
 
         const collection = newDatabaseTable
 
@@ -563,12 +653,15 @@ export async function post_videos(request) {
             sermonTagsId = tagDoc._id
         }
 
+        const videoId = normalizedUrl ? getVimeoId(normalizedUrl) : null
+        const entryType = isBibleStudy ? 'bible_studies' : 'sermons'
+
         const item = {
             name: title,
             preacher,
             book,
-            videoLink: url,
-            title: getVimeoId(url),
+            videoLink: normalizedUrl,
+            title: videoId,
             description,
             audioUrl,
             sermonPdf,
@@ -578,13 +671,15 @@ export async function post_videos(request) {
             tags: normalizedTags,
             sermonTagsId,
             published: false,
-            createdTime: createdAt ? new Date(createdAt) : new Date()
+            createdTime: createdAt ? new Date(createdAt) : new Date(),
+            type: entryType,
+            isBibleStudy
         }
         const saved = await wixData.insert(collection, item, {
             suppressAuth: true
         })
         return ok({
-            body: { success: true, collection, id: saved._id, item: saved },
+            body: { success: true, collection, id: saved._id, item: {...saved, id: saved._id, createdAt: saved.createdTime} },
             headers: corsHeaders(origin)
         })
     } catch (err) {
@@ -657,7 +752,7 @@ export async function put_videos(request) {
             preacher,
             chapter = null,
             verses = null,
-            url,
+            videoLink,
             audioUrl,
             sermonPdfBase64,
             sermonPdfName = 'sermon.pdf',
@@ -666,7 +761,9 @@ export async function put_videos(request) {
             sermonPath = '/sermons',
             description,
             createdAt,
-            tags
+            tags,
+            type: requestType,
+            isBibleStudy: requestIsBibleStudy
         } = payload
 
         if (!id || !book) {
@@ -689,6 +786,22 @@ export async function put_videos(request) {
 
         let sermonPdf = existing.sermonPdf || null
         let bulletinPdf = existing.bulletinPdf || null
+
+        const isBibleStudy = resolveIsBibleStudy(
+            requestIsBibleStudy,
+            requestType
+        )
+        const rawUrl = typeof videoLink === 'string' ? videoLink.trim() : undefined
+        const hasUrl = Object.prototype.hasOwnProperty.call(payload, 'videoLink')
+        const fallbackVideoLink =
+            typeof existing.videoLink === 'string' ? existing.videoLink : ''
+        const nextVideoLink = hasUrl
+            ? rawUrl || ''
+            : isBibleStudy
+              ? ''
+              : fallbackVideoLink
+        const nextVideoTitle = nextVideoLink ? getVimeoId(nextVideoLink) : null
+        const entryType = isBibleStudy ? 'bible_studies' : 'sermons'
 
         // Re-upload PDF if provided
         if (sermonPdfBase64) {
@@ -786,8 +899,8 @@ export async function put_videos(request) {
 
         const updatedItem = {
             ...existing,
-            title: getVimeoId(url) ?? existing.title,
-            videoLink: url ?? existing.videoLink,
+            title: nextVideoTitle,
+            videoLink: nextVideoLink,
             book,
             preacher: preacher === undefined ? existing.preacher : preacher,
             description,
@@ -799,7 +912,9 @@ export async function put_videos(request) {
             tags: updatedTags === undefined ? existing.tags : updatedTags,
             sermonTagsId,
             createdTime: createdAt ? new Date(createdAt) : existing.createdTime,
-            name: title
+            name: title,
+            type: entryType,
+            isBibleStudy
         }
 
         const saved = await wixData.update(collection, updatedItem, {
@@ -807,7 +922,7 @@ export async function put_videos(request) {
         })
 
         return ok({
-            body: { success: true, collection, id: saved._id, item: saved },
+            body: { success: true, collection, id: saved._id, item: {...saved, id: saved._id, createdAt: saved.createdTime} },
             headers: corsHeaders(origin)
         })
     } catch (err) {
@@ -1026,6 +1141,13 @@ export async function get_sermons(request) {
     const endStr = (q.end || '').trim()
     const page = Math.max(1, parseInt(q.page || '1', 10))
     const perPage = Math.min(100, Math.max(1, parseInt(q.per_page || '30', 10)))
+    const rawType = (q.type || '').trim().toLowerCase()
+    const typeFilter =
+        rawType === 'bible_studies'
+            ? 'bible_studies'
+            : rawType === 'sermons'
+              ? 'sermons'
+              : null
 
     // Optional tags filter (supports CSV or array)
     const rawTags = q.tags
@@ -1169,6 +1291,15 @@ export async function get_sermons(request) {
             }
         }
 
+        if (typeFilter === 'bible_studies') {
+            query = query.eq('isBibleStudy', true)
+        } else if (typeFilter === 'sermons') {
+            query =
+                typeof query.ne === 'function'
+                    ? query.ne('isBibleStudy', true)
+                    : query.eq('isBibleStudy', false)
+        }
+
         // Sort newest first so pagination is stable
         query = query.descending('createdTime').ascending('_id')
 
@@ -1219,26 +1350,39 @@ export async function get_sermons(request) {
             }
         }
 
-        const items = res.items.map((it) => ({
-            id: it._id,
-            collection: newDatabaseTable,
-            book: it.book || '',
-            name: it.name || '',
-            preacher: it.preacher || '',
-            description: it.description || '',
-            url: it.videoLink || '',
-            audioUrl: it.audioUrl || '',
-            sermonPdf: it.sermonPdf || null,
-            bulletinPdf: it.bulletinPdf || null,
-            createdAt: it.createdTime || it._createdDate,
-            verses: it.verses,
-            chapter: it.chapter,
-            tags:
-                (it?.sermonTagsId && tagsMap.get(it.sermonTagsId)) ||
-                it.tags ||
-                [],
-            published: it.published
-        }))
+        const items = res.items.map((it) => {
+            const normalizedType =
+                it?.type === 'bible_studies' ? 'bible_studies' : 'sermons'
+            const isBibleStudyFlag =
+                typeof it?.isBibleStudy === 'boolean'
+                    ? it.isBibleStudy
+                    : normalizedType === 'bible_studies'
+            const videoLink =
+                typeof it.videoLink === 'string' ? it.videoLink : ''
+
+            return {
+                id: it._id,
+                collection: newDatabaseTable,
+                book: it.book || '',
+                name: it.name || '',
+                preacher: it.preacher || '',
+                description: it.description || '',
+                videoLink: videoLink,
+                audioUrl: it.audioUrl || '',
+                sermonPdf: it.sermonPdf || null,
+                bulletinPdf: it.bulletinPdf || null,
+                createdAt: it.createdTime,
+                verses: it.verses,
+                chapter: it.chapter,
+                tags:
+                    (it?.sermonTagsId && tagsMap.get(it.sermonTagsId)) ||
+                    it.tags ||
+                    [],
+                published: it.published,
+                type: normalizedType,
+                isBibleStudy: isBibleStudyFlag
+            }
+        })
 
         const total = res.totalCount
         const totalPages = Math.max(1, Math.ceil(total / perPage))
@@ -1307,6 +1451,77 @@ export async function post_manage_roles(request) {
                 error: '',
                 details: String(err?.message || err)
             }
+        })
+    }
+}
+
+
+export function options_pdf_view(request) {
+    const origin = request?.headers?.origin
+    const acrh = request?.headers?.['access-control-request-headers']
+    return ok({ headers: corsHeaders(origin, acrh) })
+}
+
+export async function get_pdf_view(request) {
+    const origin = request?.headers?.origin
+    const q = request.query || {}
+    const fileParam = q.file
+
+    if (!fileParam) {
+        return badRequest({
+            body: { error: '`file` query param is required' },
+            headers: corsHeaders(origin)
+        })
+    }
+
+    try {
+        const fileUrl = decodeURIComponent(String(fileParam))
+        let fileInfo = null
+        let viewUrl = ''
+
+        try {
+            fileInfo = await mediaManager.getFileInfo(fileUrl)
+            viewUrl =
+                fileInfo?.url ||
+                fileInfo?.media?.document?.url ||
+                fileInfo?.media?.url ||
+                ''
+        } catch (e) {
+            fileInfo = null
+            viewUrl = ''
+        }
+
+        if (!viewUrl) {
+            const signedUrl = await mediaManager.getDownloadUrl(fileUrl)
+            const pdfResponse = await fetch(signedUrl)
+
+            if (!pdfResponse.ok) {
+                return notFound({
+                    body: { error: 'File not found or inaccessible' },
+                    headers: corsHeaders(origin)
+                })
+            }
+
+            const contentType =
+                pdfResponse.headers.get('content-type') || 'application/pdf'
+            const fileBuffer = Buffer.from(await pdfResponse.arrayBuffer())
+            viewUrl = `data:${contentType};base64,${fileBuffer.toString('base64')}`
+        }
+
+        return ok({
+            headers: {
+                'Content-Type': 'application/json',
+                ...corsHeaders(origin)
+            },
+            body: { url: viewUrl, fileInfo }
+        })
+    } catch (e) {
+        return serverError({
+            body: {
+                error: 'Unable to prepare PDF viewer URL',
+                details: String(e?.message || e)
+            },
+            headers: corsHeaders(origin)
         })
     }
 }
