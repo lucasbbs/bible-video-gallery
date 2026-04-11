@@ -3,11 +3,14 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { BrowserRouter } from 'react-router'
+import { UiSettingsProvider } from './components/lib-ui/UiSettingsContext'
 
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter>
     <StrictMode>
-      <App />
+      <UiSettingsProvider>
+        <App />
+      </UiSettingsProvider>
     </StrictMode>
   </BrowserRouter>,
 )

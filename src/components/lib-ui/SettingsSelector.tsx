@@ -1,31 +1,18 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
 import { Button } from "../ui/button"
 import { SettingsIcon, MinusIcon, PlusIcon } from "lucide-react"
 import { Label } from "../ui/label"
 import { Switch } from "../ui/switch"
 import { useSidebar } from "@/components/ui/sidebar"
+import { DEFAULT_TEXT_SIZE_PX, useUiSettings } from "./UiSettingsContext"
 
 export const SettingsSelector = () => {
   const { isMobile, openComponent, setOpenComponent, state: sidebarState } =
     useSidebar()
   const [open, setOpen] = useState(false)
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('bible-video-gallery:dark-mode') === '1'
-  })
-  const [textSize, setTextSize] = useState(() => {
-    return Number(localStorage.getItem('bible-video-gallery:text-size')) || 16
-  })
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode)
-    localStorage.setItem('bible-video-gallery:dark-mode', darkMode ? '1' : '0')
-  }, [darkMode])
-
-  useEffect(() => {
-    document.documentElement.style.fontSize = `${textSize}px`;
-    localStorage.setItem('bible-video-gallery:text-size', String(textSize))
-  }, [textSize])
+  const { darkMode, setDarkMode, textSize, setTextSize, minTextSize, maxTextSize } =
+    useUiSettings()
 
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen)
@@ -80,10 +67,30 @@ export const SettingsSelector = () => {
 
             <div className="flex items-center justify-between gap-4">
               <Label htmlFor="setting-text-size">Large text</Label>
-              <div className='flex items-center'>
-                <MinusIcon className="cursor-pointer" onClick={() => setTextSize(prev => prev - 1)} />
-                {textSize}
-                <PlusIcon className="cursor-pointer" onClick={() => setTextSize(prev => prev + 1)} />
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Decrease text size"
+                  disabled={textSize <= minTextSize}
+                  onClick={() => setTextSize((prev) => prev - 1)}
+                >
+                  <MinusIcon />
+                </Button>
+                <span className="w-12 text-center tabular-nums">{textSize}px</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Increase text size"
+                  disabled={textSize >= maxTextSize}
+                  onClick={() => setTextSize((prev) => prev + 1)}
+                >
+                  <PlusIcon />
+                </Button>
               </div>
             </div>
           </div>
@@ -92,7 +99,7 @@ export const SettingsSelector = () => {
             variant="outline"
             onClick={() => {
               setDarkMode(false)
-              setTextSize(16)
+              setTextSize(DEFAULT_TEXT_SIZE_PX)
             }}
           >
             Reset

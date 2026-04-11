@@ -10,6 +10,7 @@ import {
     type EmbedPdfContainer,
 } from '@embedpdf/react-pdf-viewer'
 import pdfReaderStyles from './pdf-reader.css?inline'
+import { useUiSettings } from './UiSettingsContext'
 
 const MAX_PDF_LINK_RETRIES = 3
 const INITIAL_RETRY_DELAY_MS = 500
@@ -98,6 +99,7 @@ type PdfPlayerProps = {
 }
 
 function PdfReader({ url: fileUrl }: PdfPlayerProps) {
+    const { textSize } = useUiSettings()
     const [url, setUrl] = useState('')
     const [error, setError] = useState('')
     const [downloadError, setDownloadError] = useState('')
@@ -249,6 +251,8 @@ function PdfReader({ url: fileUrl }: PdfPlayerProps) {
         }
     }
 
+    const controlLabelFontSize = `${Number((textSize * 0.7).toFixed(2))}px`
+
     if (error) {
         return <div className="text-sm text-red-600">{error}</div>
     }
@@ -278,7 +282,7 @@ function PdfReader({ url: fileUrl }: PdfPlayerProps) {
                         aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
                     >
                         {isFullscreen ? <Minimize2 /> : <Maximize2 />}
-                        <span className="text-[10px]">
+                        <span style={{ fontSize: controlLabelFontSize }}>
                             {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                         </span>
                     </Button>
@@ -290,7 +294,7 @@ function PdfReader({ url: fileUrl }: PdfPlayerProps) {
                         aria-label={isDownloading ? 'Preparing PDF download' : 'Download PDF'}
                     >
                         {isDownloading ? <Loader2 className="animate-spin" /> : <Download />}
-                        <span className="text-[10px]">
+                        <span style={{ fontSize: controlLabelFontSize }}>
                             {isDownloading ? 'Preparing...' : 'Download PDF'}
                         </span>
                     </Button>
