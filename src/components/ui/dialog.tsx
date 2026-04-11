@@ -46,14 +46,28 @@ function DialogOverlay({
   )
 }
 
+type DialogContentProps = React.ComponentProps<typeof DialogPrimitive.Content> & {
+  overlayMode?: "radix" | "custom"
+  overlayClassName?: string
+}
+
 function DialogContent({
   className,
   children,
+  overlayMode = "radix",
+  overlayClassName,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content>) {
+}: DialogContentProps) {
   return (
     <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay />
+      {overlayMode === "custom" ? (
+        <div
+          aria-hidden="true"
+          className={cn("fixed inset-0 z-50 bg-black/80", overlayClassName)}
+        />
+      ) : (
+        <DialogOverlay className={overlayClassName} />
+      )}
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(

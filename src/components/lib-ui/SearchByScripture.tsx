@@ -4,7 +4,6 @@ import {
     ListItem,
     ListItemAccordionProvider,
 } from '../../components/lib-ui/ListItem'
-import { getFileNoteDownloadLink } from '../../services/videos'
 import { Dialog, DialogTrigger } from '../../components/ui/dialog'
 import { Button } from '../../components/ui/button'
 import { VideoModal } from '../../components/lib-ui/VideoModal'
@@ -22,12 +21,6 @@ function SearchByScripture() {
         page,
         pageSize
     } = useScriptureSearch()
-
-    const openPdfFile = async (fileUrl?: string) => {
-        if (!fileUrl) return
-        const { data } = await getFileNoteDownloadLink(fileUrl)
-        window.open(data.url)
-    }
 
     return (
         <div>
@@ -87,7 +80,7 @@ function SearchByScripture() {
                                             </Dialog>
                                         ) : null}
                                         {sermon.sermonPdfUrl ? (
-                                            <Dialog>
+                                            <Dialog modal={false}>
                                                 <DialogTrigger asChild>
                                             <Button
                                                 type="button"
@@ -102,19 +95,19 @@ function SearchByScripture() {
                                             </Dialog>
                                         ) : null}
                                         {sermon.sermonBulletinUrl ? (
-                                            <Button
-                                                type="button"
-                                                className="h-12 rounded-full px-4"
-                                                onClick={async () => {
-                                                    await openPdfFile(
-                                                        sermon.sermonBulletinUrl
-                                                    )
-                                                }}
-                                                variant="secondary"
-                                            >
-                                                <FileText className="size-5" />
-                                                <span>Bulletin</span>
-                                            </Button>
+                                            <Dialog modal={false}>
+                                                <DialogTrigger asChild>
+                                                    <Button
+                                                        type="button"
+                                                        className="h-12 rounded-full px-4"
+                                                        variant="secondary"
+                                                    >
+                                                        <FileText className="size-5" />
+                                                        <span>Bulletin</span>
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <PdfModal url={sermon.sermonBulletinUrl} />
+                                            </Dialog>
                                         ) : null}
                                     </div>
                                 </ListItem>
