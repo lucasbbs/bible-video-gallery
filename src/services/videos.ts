@@ -46,8 +46,11 @@ export const getFileNoteDownloadLink = async (videoId: string) => {
     return await api.get(`/download?file=${videoId}`)
 }
 
-export const getFileNoteViewLink = async (videoId: string) => {
-    return await api.get(`/pdf_view?file=${videoId}`)
+export const getFileNoteViewLink = async (
+    videoId: string,
+    signal?: AbortSignal
+) => {
+    return await api.get(`/pdf_view?file=${videoId}`, { signal })
 }
 
 export const getVimeoVideos = async (page: number, per_page: number) => {
