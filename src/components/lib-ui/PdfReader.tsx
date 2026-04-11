@@ -278,7 +278,7 @@ function PdfReader({ url: fileUrl }: PdfPlayerProps) {
                         aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
                     >
                         {isFullscreen ? <Minimize2 /> : <Maximize2 />}
-                        <span className="hidden sm:inline">
+                        <span className="text-[10px]">
                             {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                         </span>
                     </Button>
@@ -290,7 +290,7 @@ function PdfReader({ url: fileUrl }: PdfPlayerProps) {
                         aria-label={isDownloading ? 'Preparing PDF download' : 'Download PDF'}
                     >
                         {isDownloading ? <Loader2 className="animate-spin" /> : <Download />}
-                        <span className="hidden sm:inline">
+                        <span className="text-[10px]">
                             {isDownloading ? 'Preparing...' : 'Download PDF'}
                         </span>
                     </Button>
