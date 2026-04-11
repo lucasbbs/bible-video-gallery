@@ -11,6 +11,9 @@ importers:
       '@embedpdf/plugin-export':
         specifier: ^2.14.0
         version: 2.14.0(@embedpdf/core@2.14.0(preact@10.29.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(svelte@5.55.3(@typescript-eslint/types@8.43.0))(vue@3.5.32(typescript@5.7.3)))(preact@10.29.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(svelte@5.55.3(@typescript-eslint/types@8.43.0))(vue@3.5.32(typescript@5.7.3))
+      '@embedpdf/plugin-fullscreen':
+        specifier: ^2.14.0
+        version: 2.14.0(@embedpdf/core@2.14.0(preact@10.29.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(svelte@5.55.3(@typescript-eslint/types@8.43.0))(vue@3.5.32(typescript@5.7.3)))(preact@10.29.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(svelte@5.55.3(@typescript-eslint/types@8.43.0))(vue@3.5.32(typescript@5.7.3))
       '@embedpdf/react-pdf-viewer':
         specifier: ^2.14.0
         version: 2.14.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(svelte@5.55.3(@typescript-eslint/types@8.43.0))(vue@3.5.32(typescript@5.7.3))
