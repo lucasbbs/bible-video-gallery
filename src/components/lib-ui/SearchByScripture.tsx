@@ -47,8 +47,8 @@ function SearchByScripture() {
                                             day: 'numeric'
                                         }
                                     ).format(new Date(sermon.createdAt))}
+                                    bibleVerse={sermon.book ? `${sermon.book} ${sermon.chapter}:${sermon.verses}` : undefined }
                                     description={sermon.description}
-                                    passage={sermon.description}
                                     type={sermon.type}
                                 >
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

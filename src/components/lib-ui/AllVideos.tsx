@@ -53,7 +53,6 @@ function AllVideos({ loading, setLoading }: AllVideosProps) {
                                     month: 'short',
                                     day: 'numeric'
                                 }).format(new Date(sermon.createdAt))}
-                            passage={sermon.description}
                             type={sermon.type}
                         >
                             <div className="flex gap-4">

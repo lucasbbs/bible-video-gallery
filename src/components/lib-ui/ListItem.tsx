@@ -60,8 +60,8 @@ type CardProps = ComponentProps<typeof Card> & {
     description?: string
     itemId?: string
     createdTime: string
-    passage: string
     type: string
+    bibleVerse?: string
 }
 
 export function ListItem({
@@ -69,7 +69,7 @@ export function ListItem({
     title,
     children,
     createdTime,
-    passage,
+    bibleVerse,
     type,
     ...props
 }: CardProps) {
@@ -84,7 +84,7 @@ export function ListItem({
                         <small>{createdTime}</small>
                         <small>{` | `}</small>
                         <BookOpen size={18} />
-                        <small>{passage}</small>
+                        <small>{bibleVerse}</small>
                     </div>
                     <div>{type === 'sermons' ? <SermonBadge /> : <BibleStudyBadge />}</div>
                 </div>
