@@ -52,7 +52,7 @@ function SearchByScripture() {
                                     type={sermon.type}
                                 >
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                        {sermon.videoLink ? <Dialog>
+                                        {sermon.type ==='sermons' ? <Dialog>
                                             <DialogTrigger asChild>
                                                 <Button
                                                     type="button"
