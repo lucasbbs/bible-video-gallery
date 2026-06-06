@@ -8,6 +8,8 @@ import {
 import { useForm } from "react-hook-form"
 
 import { Sermon, SermonDTO } from "@/dtos/sermon.dto"
+import { TeacherDTO } from "@/dtos/teacher.dto"
+import { getTeachers } from "@/services/teachers"
 import { getVideos } from "@/services/videos"
 import { allBooks, newTestament, oldTestament } from "@/shared/books"
 import { DateRange } from "react-day-picker"
@@ -31,7 +33,9 @@ type ScriptureSearchContextValue = {
   total: number
   page: number
   pageSize: number
+  type: string
   preacher: string
+  teachers: TeacherDTO[]
   selectedDateRange: DateRange | undefined
   setSelectedDateRange: (range: DateRange | undefined) => void
   handleTestamentChange: (value: string) => void
@@ -85,6 +89,7 @@ export function ScriptureSearchProvider({
   const [showOther, setShowOther] = useState(false)
   const [total, setTotal] = useState(0)
   const [preacher, setPreacher] = useState('')
+  const [teachers, setTeachers] = useState<TeacherDTO[]>([])
 
   const resetForm = (optionSelected: string[]) => {
     form.reset()
@@ -142,6 +147,30 @@ export function ScriptureSearchProvider({
   const dateTo = selectedDateRange?.to ? formatDateParam(selectedDateRange.to) : null
 
   useEffect(() => {
+    setPreacher('')
+    if (type !== "bible_studies") {
+      setTeachers([])
+      return
+    }
+
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const nextTeachers = await getTeachers()
+        if (!cancelled) setTeachers(nextTeachers)
+      } catch (error) {
+        console.error("Failed to load teachers", error)
+        if (!cancelled) setTeachers([])
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [type])
+
+  useEffect(() => {
     if (showOther) {
       setChapters([])
       return
@@ -177,11 +206,13 @@ export function ScriptureSearchProvider({
     selectedBook,
     books,
     preacher,
+    teachers,
     sermons,
     showOther,
     total,
     page,
     pageSize,
+    type,
     handleTestamentChange,
     handleBookChange,
     handleChapterChange,

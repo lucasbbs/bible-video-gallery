@@ -34,6 +34,9 @@ const SIDEBAR_FILTERS_OPEN_KEY = "bible-video-gallery:sidebar-filters-open"
 const LEGACY_SCRIPTURE_OPEN_KEY = "bible-video-gallery:sidebar-scripture-search"
 const LEGACY_PREACHER_OPEN_KEY = "bible-video-gallery:sidebar-preacher-search"
 
+const slugifyTeacherValue = (name: string) =>
+  name.trim().toLocaleLowerCase().replace(/\s+/g, "_")
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state } = useSidebar()
   const isCollapsed = state === "collapsed"
@@ -45,6 +48,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     selectedBook,
     selectedChapter,
     selectedTestament,
+    teachers,
+    type,
     handleBookChange,
     handleChapterChange,
     handlePreacherChange,
@@ -121,6 +126,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {label: 'Guest', value: 'guest'}
   ]
 
+  const isBibleStudies = type === "bible_studies"
+  const speakerOptions = isBibleStudies
+    ? teachers.map((teacher) => ({
+        value: slugifyTeacherValue(teacher.name),
+        label: teacher.name,
+      }))
+    : preachers
+  const speakerFilterLabel = isBibleStudies
+    ? "Search by Teacher"
+    : "Search by Preacher"
+  const speakerFormLabel = isBibleStudies ? "Teachers" : "Preachers"
+  const speakerPlaceholder = isBibleStudies
+    ? "Select Teacher"
+    : "Select Preacher"
+
   const sidebarFilterOptions = [
     {
       id: "scripture",
@@ -183,7 +203,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     {
       id: "preacher",
-      label: "Search by Preacher",
+      label: speakerFilterLabel,
       Icon: UserSearchIcon,
       items: [
         {
@@ -197,13 +217,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               value={preacher || "all"}
               options={[
                 { value: "all", label: "All" },
-                ...preachers.map((preacher) => ({
-                  value: preacher.value,
-                  label: preacher.label,
+                ...speakerOptions.map((speaker) => ({
+                  value: speaker.value,
+                  label: speaker.label,
                 })),
               ]}
-              formLabel="Preachers"
-              placeholder="Select Preacher"
+              formLabel={speakerFormLabel}
+              placeholder={speakerPlaceholder}
             />
           ),
         },
