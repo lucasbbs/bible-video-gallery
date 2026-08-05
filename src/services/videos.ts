@@ -9,9 +9,23 @@ export const getVideos = async (
     has_filters = 1,
     type: string | null = null,
     dateFrom: string | null = null,
-    dateTo: string | null = null
+    dateTo: string | null = null,
+    tags: string[] | string = ''
 ) => {
-    const url = `/videos?book=${book}&page=${page}&per_page=${per_page}&preacher=${preacher}&has_filters=${has_filters}&type=${type}&dateFrom=${dateFrom}&dateTo=${dateTo}`
+    const params = new URLSearchParams()
+    const tagValue = Array.isArray(tags) ? tags.join(',') : tags
+
+    if (book) params.set('book', book)
+    if (page !== null) params.set('page', String(page))
+    if (per_page !== null) params.set('per_page', String(per_page))
+    if (preacher) params.set('preacher', preacher)
+    params.set('has_filters', String(has_filters))
+    if (type) params.set('type', type)
+    if (dateFrom) params.set('dateFrom', dateFrom)
+    if (dateTo) params.set('dateTo', dateTo)
+    if (tagValue) params.set('tags', tagValue)
+
+    const url = `/videos?${params.toString()}`
 
     const cacheKey = buildEtagCacheKey(api.defaults.baseURL, url)
     const cached = readEtagCache<unknown>(cacheKey)

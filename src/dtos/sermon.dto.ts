@@ -22,6 +22,7 @@ export type Sermon = {
     createdTime?: string
     created_time?: string
     updatedAt: string
+    tags: string[]
 }
 
 export class SermonDTO {
@@ -36,6 +37,7 @@ export class SermonDTO {
     verses: string
     videoLink: string
     type: SermonType
+    tags: string[]
     _id: string
     createdAt: string
     updatedAt: string
@@ -54,6 +56,7 @@ export class SermonDTO {
         this._id = data._id
         this.createdAt = data.createdTime || data.created_time || ''
         this.updatedAt = data.updatedAt
+        this.tags = data.tags
     }
 
     static from(data: Sermon): SermonDTO {

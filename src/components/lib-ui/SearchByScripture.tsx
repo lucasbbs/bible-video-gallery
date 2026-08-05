@@ -19,7 +19,9 @@ function SearchByScripture() {
         showOther,
         total,
         page,
-        pageSize
+        pageSize,
+        selectedTag,
+        handleTagChange
     } = useScriptureSearch()
 
     return (
@@ -50,6 +52,8 @@ function SearchByScripture() {
                                     bibleVerse={sermon.book ? `${sermon.book} ${sermon.chapter}:${sermon.verses}` : undefined }
                                     description={sermon.description}
                                     type={sermon.type}
+                                    tags={selectedTag ? [] : sermon.tags}
+                                    onTagClick={handleTagChange}
                                 >
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                         {sermon.type ==='sermons' ? <Dialog>

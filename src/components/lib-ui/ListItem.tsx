@@ -62,6 +62,8 @@ type CardProps = ComponentProps<typeof Card> & {
     createdTime: string
     type: string
     bibleVerse?: string
+    tags?: string[]
+    onTagClick?: (tag: string) => void
 }
 
 export function ListItem({
@@ -71,6 +73,8 @@ export function ListItem({
     createdTime,
     bibleVerse,
     type,
+    tags,
+    onTagClick,
     ...props
 }: CardProps) {
 
@@ -104,6 +108,19 @@ export function ListItem({
                                 <MoreHorizontal className="h-12 w-12" />
                             </Button> */}
                         </div>
+                        {(tags || []).length > 0 ? (
+                            <div className="max-h-0 -mt-4 overflow-hidden opacity-0 transition-[max-height,opacity] duration-500 ease-out group-hover:max-h-16 group-hover:opacity-100 group-focus-within:max-h-16 group-focus-within:opacity-100">
+                                <div className="flex flex-wrap gap-2">
+                                    {(tags || []).map(tag => (
+                                        <TagViewer
+                                            key={tag}
+                                            tag={tag}
+                                            onClick={onTagClick}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ) : null}
                         {/* <div className="flex items-center sm:hidden">
                             <Button
                                 type="button"
@@ -139,5 +156,23 @@ export function ListItem({
                 ) : null}
             </CardHeader>
         </Card>
+    )
+}
+
+const TagViewer = ({
+    tag,
+    onClick
+}: {
+    tag: string
+    onClick?: (tag: string) => void
+}) => {
+    return (
+        <button
+            type="button"
+            className="mt-2 text-sm"
+            onClick={() => onClick?.(tag)}
+        >
+            #{tag}
+        </button>
     )
 }

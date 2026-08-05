@@ -36,12 +36,14 @@ type ScriptureSearchContextValue = {
   type: string
   preacher: string
   teachers: TeacherDTO[]
+  selectedTag: string | null
   selectedDateRange: DateRange | undefined
   setSelectedDateRange: (range: DateRange | undefined) => void
   handleTestamentChange: (value: string) => void
   handleBookChange: (value: string) => void
   handleChapterChange: (value: number) => void
   handlePreacherChange: (value: string) => void
+  handleTagChange: (value: string) => void
 }
 
 const ScriptureSearchContext =
@@ -63,7 +65,9 @@ type ScriptureSearchProviderProps = {
   page: number
   pageSize: number
   type: string
+  selectedTag: string | null
   selectedDateRange: DateRange | undefined
+  onSetSelectedTag: (tag: string | null) => void
   onSetSelectedDateRange: (range: DateRange | undefined) => void
   onResetPage: () => void
   children: ReactNode
@@ -74,7 +78,9 @@ export function ScriptureSearchProvider({
   page,
   pageSize,
   type,
+  selectedTag,
   selectedDateRange,
+  onSetSelectedTag,
   onSetSelectedDateRange,
   onResetPage,
   children,
@@ -141,6 +147,14 @@ export function ScriptureSearchProvider({
     onResetPage()
   }
 
+  const handleTagChange = (value: string) => {
+    onSetSelectedTag(value)
+    setSelectedChapter(0)
+    setSermons([])
+    setTotal(0)
+    onResetPage()
+  }
+
   const dateFrom = selectedDateRange?.from
     ? formatDateParam(selectedDateRange.from)
     : null
@@ -188,15 +202,25 @@ export function ScriptureSearchProvider({
       setLoading(true)
       const book = showOther ? "others" : selectedBook === "" ? null : selectedBook
       const hasFilters =
-        showOther || selectedBook !== "" || preacher !== "" || dateFrom || dateTo ? 1 : 0
+        showOther || selectedBook !== "" || preacher !== "" || dateFrom || dateTo || selectedTag ? 1 : 0
       const {
         data: { videos, total },
-      } = await getVideos(book, page, pageSize, preacher, hasFilters, type, dateFrom, dateTo)
+      } = await getVideos(
+        book,
+        page,
+        pageSize,
+        preacher,
+        hasFilters,
+        type,
+        dateFrom,
+        dateTo,
+        selectedTag ? [selectedTag] : ''
+      )
       setTotal(total)
       setSermons(videos.map((sermon: Sermon) => SermonDTO.from(sermon)))
       setLoading(false)
     })()
-  }, [page, pageSize, selectedBook, showOther, setLoading, preacher, type, dateFrom, dateTo])
+  }, [page, pageSize, selectedBook, showOther, setLoading, preacher, type, dateFrom, dateTo, selectedTag])
 
   const contextValue: ScriptureSearchContextValue = {
     form,
@@ -207,6 +231,7 @@ export function ScriptureSearchProvider({
     books,
     preacher,
     teachers,
+    selectedTag,
     sermons,
     showOther,
     total,
@@ -217,6 +242,7 @@ export function ScriptureSearchProvider({
     handleBookChange,
     handleChapterChange,
     handlePreacherChange,
+    handleTagChange,
     selectedDateRange,
     setSelectedDateRange: onSetSelectedDateRange,
 
