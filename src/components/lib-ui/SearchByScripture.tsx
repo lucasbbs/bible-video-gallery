@@ -49,7 +49,7 @@ function SearchByScripture() {
                                             day: 'numeric'
                                         }
                                     ).format(new Date(sermon.createdAt))}
-                                    bibleVerse={sermon.book ? `${sermon.book} ${sermon.chapter}:${sermon.verses}` : undefined }
+                                    bibleVerse={sermon.book !== 'others' ? `${sermon.book} ${sermon.chapter}:${sermon.verses}` : undefined }
                                     description={sermon.description}
                                     type={sermon.type}
                                     tags={selectedTag ? [] : sermon.tags}

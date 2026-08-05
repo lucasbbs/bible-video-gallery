@@ -86,9 +86,13 @@ export function ListItem({
                     <div className="flex gap-2">
                         <Calendar size={18} />
                         <small>{createdTime}</small>
-                        <small>{` | `}</small>
-                        <BookOpen size={18} />
-                        <small>{bibleVerse}</small>
+                        {bibleVerse && (
+                            <>
+                                <small>{` | `}</small>
+                                <BookOpen size={18} />
+                                <small>{bibleVerse}</small>
+                            </>
+                        )}
                     </div>
                     <div>{type === 'sermons' ? <SermonBadge /> : <BibleStudyBadge />}</div>
                 </div>
