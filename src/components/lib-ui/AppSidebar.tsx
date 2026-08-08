@@ -160,7 +160,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 { value: "new", label: "New Testament" },
                 { value: "others", label: "Others" },
               ]}
-              formLabel="By Testament*"
+              formLabel="Testament*"
               placeholder="Select Testament"
             />
           ),

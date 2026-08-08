@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form"
 import { Sermon, SermonDTO } from "@/dtos/sermon.dto"
 import { TeacherDTO } from "@/dtos/teacher.dto"
 import { getTeachers } from "@/services/teachers"
-import { getVideos } from "@/services/videos"
+import { getBibleChapters, getVideos } from "@/services/videos"
 import { allBooks, newTestament, oldTestament } from "@/shared/books"
 import { DateRange } from "react-day-picker"
 
@@ -193,16 +193,29 @@ export function ScriptureSearchProvider({
       setChapters([])
       return
     }
-    const chapters = sermons.map((video: SermonDTO) => video.chapter)
-    setChapters([...new Set(chapters)].sort((a, b) => a - b))
+
+    ;(async () => {
+      try {
+        const response = await getBibleChapters(selectedBook)
+        const nextChapters = response.data.items.map((item) => item.chapterNumber).sort((a, b) => a - b)
+        setChapters(nextChapters)
+      } catch (error) {
+        console.error("Failed to load chapters", error)
+        setChapters([])
+      }
+    })()
   }, [sermons, showOther, selectedBook])
 
   useEffect(() => {
     ;(async () => {
       setLoading(true)
       const book = showOther ? "others" : selectedBook === "" ? null : selectedBook
+      const testament =
+        selectedTestament === "old" || selectedTestament === "new"
+          ? selectedTestament
+          : null
       const hasFilters =
-        showOther || selectedBook !== "" || preacher !== "" || dateFrom || dateTo || selectedTag ? 1 : 0
+        showOther || testament || selectedBook !== "" || preacher !== "" || dateFrom || dateTo || selectedTag ? 1 : 0
       const {
         data: { videos, total },
       } = await getVideos(
@@ -214,13 +227,15 @@ export function ScriptureSearchProvider({
         type,
         dateFrom,
         dateTo,
-        selectedTag ? [selectedTag] : ''
+        selectedTag ? [selectedTag] : '',
+        testament,
+        selectedChapter
       )
       setTotal(total)
       setSermons(videos.map((sermon: Sermon) => SermonDTO.from(sermon)))
       setLoading(false)
     })()
-  }, [page, pageSize, selectedBook, showOther, setLoading, preacher, type, dateFrom, dateTo, selectedTag])
+  }, [page, pageSize, selectedBook, selectedTestament, showOther, setLoading, preacher, type, dateFrom, dateTo, selectedTag, selectedChapter])
 
   const contextValue: ScriptureSearchContextValue = {
     form,
