@@ -49,6 +49,11 @@ export default function Selector({
 	              sideOffset={8}
 	              collisionPadding={12}
 	            >
+                {formLabel === 'Books' && (
+                  <SelectItem key="all" value="all">
+                    All Books
+                  </SelectItem>
+                )}
 	              {options.map((option) => (
 	                <SelectItem key={option.value} value={option.value}>
 	                  {option.label}
