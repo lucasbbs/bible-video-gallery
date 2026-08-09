@@ -209,7 +209,15 @@ export function ScriptureSearchProvider({
   useEffect(() => {
     ;(async () => {
       setLoading(true)
-      const book = showOther ? "others" : selectedBook === "" ? null : selectedBook
+      // const book = showOther ? "others" : selectedBook === "" ? null : selectedBook
+      let book: string | null = null
+      if (showOther) {
+        book = "others"
+      } else if (selectedBook === 'all') {
+        book = null
+      } else if (selectedBook !== "") {
+        book = selectedBook
+      }
       const testament =
         selectedTestament === "old" || selectedTestament === "new"
           ? selectedTestament
