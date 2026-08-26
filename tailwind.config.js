@@ -93,6 +93,9 @@ module.exports = {
       }
     },
     extend: {
+      fontFamily: {
+        'font-sans-serif': ['Noto Serif Display', 'serif']
+      },
       minWidth: theme => ({
         ...theme('spacing')
       }),

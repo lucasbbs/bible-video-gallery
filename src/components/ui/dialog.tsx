@@ -46,14 +46,28 @@ function DialogOverlay({
   )
 }
 
+type DialogContentProps = React.ComponentProps<typeof DialogPrimitive.Content> & {
+  overlayMode?: "radix" | "custom"
+  overlayClassName?: string
+}
+
 function DialogContent({
   className,
   children,
+  overlayMode = "radix",
+  overlayClassName,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content>) {
+}: DialogContentProps) {
   return (
     <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay />
+      {overlayMode === "custom" ? (
+        <div
+          aria-hidden="true"
+          className={cn("fixed inset-0 z-50 bg-black/80", overlayClassName)}
+        />
+      ) : (
+        <DialogOverlay className={overlayClassName} />
+      )}
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
@@ -63,7 +77,7 @@ function DialogContent({
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+        <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 bg-background hover:bg-accent">
           <XIcon />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { PaginationWithLinks } from './VideosPagination'
 import { useLocation } from 'react-router'
-import { getVimeoVideos } from '@/services/videos'
+import { getFileNoteDownloadLink, getVimeoVideos } from '@/services/videos'
 import { ListItem, ListItemAccordionProvider } from './ListItem'
 import { Dialog, DialogTrigger } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { VideoModal } from './VideoModal'
 import { MonitorPlayIcon, NotebookTextIcon, HeadphonesIcon } from 'lucide-react'
+import { Sermon, SermonDTO } from '@/dtos/sermon.dto'
 
 type AllVideosProps = {
     loading: boolean
@@ -14,51 +15,78 @@ type AllVideosProps = {
 }
 
 function AllVideos({ loading, setLoading }: AllVideosProps) {
-    const [videos, setVideos] = useState<Array<any>>([])
+    const [sermons, setSermons] = useState<SermonDTO[]>([])
     const [total, setTotal] = useState(0)
 
     const location = useLocation()
     const searchParams = new URLSearchParams(location.search)
 
     const page = parseInt(searchParams.get('page') || '1')
-    const pageSize = parseInt(searchParams.get('pageSize') || '20')
+    const pageSize = parseInt(searchParams.get('pageSize') || '5')
 
     useEffect(() => {
         ;(async () => {
             setLoading(true)
             const { data } = await getVimeoVideos(page, pageSize)
             setTotal(data.data.total)
-            setVideos(data.data.data)
+            setSermons(
+                data.data.data.map((sermon: Sermon) => SermonDTO.from(sermon))
+            )
             setLoading(false)
         })()
     }, [pageSize, page])
+
+    console.log(sermons)
 
     return (
         <div className="grid gap-4 px-8">
             <ListItemAccordionProvider>
                 {!loading &&
-                    videos.map((video) => (
+                    sermons.map((sermon) => (
                         <ListItem
-                            key={video.uri}
-                            itemId={video.uri}
-                            title={video.name}
-                            description={video.description}
+                            key={sermon.uri}
+                            itemId={sermon.uri}
+                            title={sermon.name}
+                            description={sermon.description}
+                            createdTime={new Intl.DateTimeFormat('en-CA', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                }).format(new Date(sermon.createdAt))}
+                            type={sermon.type}
                         >
                             <div className="flex gap-4">
-                                <Button
-                                    className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
-                                    variant={'secondary'}
-                                    size={'icon'}
-                                >
-                                    <HeadphonesIcon />
-                                </Button>
-                                <Button
-                                    className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
-                                    variant={'secondary'}
-                                    size={'icon'}
-                                >
-                                    <NotebookTextIcon />
-                                </Button>
+                                {sermon.audioUrl ? (
+                                    <Button
+                                        className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
+                                        variant={'secondary'}
+                                        onClick={() => {
+                                            window.open(
+                                                sermon.audioUrl,
+                                                '_blank'
+                                            )
+                                        }}
+                                        size={'icon'}
+                                    >
+                                        <HeadphonesIcon />
+                                    </Button>
+                                ) : null}
+                                {sermon.sermonPdfUrl ? (
+                                    <Button
+                                        className="inline-flex h-12 w-12 items-center justify-center !rounded-full "
+                                        variant={'secondary'}
+                                        onClick={async () => {
+                                            const { data } =
+                                                await getFileNoteDownloadLink(
+                                                    sermon.sermonPdfUrl || ''
+                                                )
+                                            window.open(data.url, '_blank')
+                                        }}
+                                        size={'icon'}
+                                    >
+                                        <NotebookTextIcon />
+                                    </Button>
+                                ) : null}
                                 <Dialog>
                                     <DialogTrigger asChild>
                                         <Button
@@ -70,7 +98,7 @@ function AllVideos({ loading, setLoading }: AllVideosProps) {
                                         </Button>
                                     </DialogTrigger>
                                     <VideoModal
-                                        id={video.uri?.replace('/videos/', '')}
+                                        id={sermon.uri?.replace('/videos/', '')}
                                     />
                                 </Dialog>
                             </div>

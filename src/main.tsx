@@ -11,7 +11,9 @@ addEnvVars();
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter>
     <StrictMode>
-      <App />
+      <UiSettingsProvider>
+        <App />
+      </UiSettingsProvider>
     </StrictMode>
   </BrowserRouter>,
 )

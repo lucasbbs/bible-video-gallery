@@ -8,7 +8,6 @@ type VideoPlayerProps = {
 function VideoPlayer({ id }: VideoPlayerProps) {
   const isMobile = useMediaQuery({ query: '(max-width: 640px)' })
 
-  console.log(isMobile)
   return (
     <div className={`${isMobile && 'relative pt-[56.25%]'}`}>
       <ReactPlayer style={isMobile ? { top: 0, left: 0 } : undefined}
