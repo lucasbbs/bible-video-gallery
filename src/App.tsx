@@ -7,9 +7,10 @@ import { SidebarInset, SidebarProvider } from './components/ui/sidebar'
 import { AppSidebar } from './components/lib-ui/AppSidebar'
 import { ScriptureSearchProvider } from './components/lib-ui/ScriptureSearchContext'
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs'
-import { useLocation, useNavigate } from 'react-router'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
 import type { DateRange } from 'react-day-picker'
 import { XIcon } from 'lucide-react'
+import CollectionsPage from './pages/CollectionsPage'
 
 const DEFAULT_TYPE = 'sermons'
 const TYPE_VALUES = ['all', 'sermons', 'bible_studies'] as const
@@ -60,7 +61,6 @@ function formatDateParam(date: Date): string {
 
 function App() {
     const [loading, setLoading] = useState(false)
-    const [selectedTag, setSelectedTag] = useState<string | null>(null)
 
     const location = useLocation()
     const navigate = useNavigate()
@@ -72,6 +72,7 @@ function App() {
     const page = parsePositiveInt(searchParams.get('page'), 1)
     const pageSize = parsePositiveInt(searchParams.get('pageSize'), 5)
     const type = parseTabValue(searchParams.get('type'))
+    const selectedTag = searchParams.get('tag')
     const selectedDateRange = useMemo<DateRange | undefined>(() => {
         const from = parseDateParam(searchParams.get('dateFrom'))
         const to = parseDateParam(searchParams.get('dateTo'))
@@ -88,10 +89,23 @@ function App() {
         navigate(qs ? `${location.pathname}?${qs}` : location.pathname)
     }, [location.pathname, location.search, navigate])
 
+    const setSelectedTagInUrl = useCallback(
+        (nextTag: string | null) => {
+            const nextParams = new URLSearchParams(location.search)
+
+            if (nextTag) nextParams.set('tag', nextTag)
+            else nextParams.delete('tag')
+
+            nextParams.delete('page')
+            const qs = nextParams.toString()
+            navigate(qs ? `${location.pathname}?${qs}` : location.pathname)
+        },
+        [location.pathname, location.search, navigate]
+    )
+
     const clearSelectedTag = useCallback(() => {
-        setSelectedTag(null)
-        resetPageInUrl()
-    }, [resetPageInUrl])
+        setSelectedTagInUrl(null)
+    }, [setSelectedTagInUrl])
 
     const setTypeInUrl = useCallback(
         (nextType: TypeValue) => {
@@ -137,64 +151,86 @@ function App() {
             }
         >
             <ScriptureSearchProvider
+                enabled={location.pathname === '/'}
                 setLoading={setLoading}
                 page={page}
                 pageSize={pageSize}
                 type={type}
                 selectedTag={selectedTag}
                 selectedDateRange={selectedDateRange}
-                onSetSelectedTag={setSelectedTag}
+                onSetSelectedTag={setSelectedTagInUrl}
                 onSetSelectedDateRange={setSelectedDateRangeInUrl}
                 onResetPage={resetPageInUrl}
             >
-                <AppSidebar />
+                <AppSidebar showFilters={location.pathname === '/'} />
                 <SidebarInset>
-                    <header className="sticky top-0 flex flex-col h-auto shrink-0 items-center gap-2 bg-background px-4">
-                        <h2 className="text-5xl font-semibold w-45 sm:w-full text-center">
-                            Sermon Gallery
-                        </h2>
-                        {selectedTag ? (
-                            <div className="flex items-center justify-center mr-40 sm:justify-between gap-2 pt-4 w-[523.667px]">
-                                <div className="text-center w-50 sm:w-full text-5xl font-thin">
-                                    #{selectedTag}
-                                </div>
-                                <button
-                                    id="remove-tag-selected"
-                                    type="button"
-                                    aria-label="Remove selected tag"
-                                    className="cursor-pointer border-0 bg-transparent p-0 text-foreground"
-                                    onClick={clearSelectedTag}
-                                >
-                                    <XIcon className="h-10 w-10" strokeWidth={.5} />
-                                </button>
-                            </div>
-                        ) : <Tabs
-                            value={type}
-                            onValueChange={(nextValue) => {
-                                setTypeInUrl(parseTabValue(nextValue))
-                            }}
-                        >
-                            <TabsList>
-                                <TabsTrigger value="all">All</TabsTrigger>
-                                <TabsTrigger value="sermons">
-                                    Sermons
-                                </TabsTrigger>
-                                <TabsTrigger value="bible_studies">
-                                    Bible Studies
-                                </TabsTrigger>
-                            </TabsList>
-                        </Tabs>}
-                    </header>
-                    
-                    <SettingsSelector />
-                    <div className="card">
-                        {loading && (
-                            <div className="flex justify-center">
-                                <Spinner />
-                            </div>
-                        )}
-                        <SearchByScripture />
-                    </div>
+                    <Routes>
+                        <Route
+                            path="/"
+                            element={
+                                <>
+                                    <header className="sticky top-0 flex h-auto shrink-0 flex-col items-center gap-2 bg-background px-4">
+                                        <h1 className="w-45 text-center text-5xl font-semibold sm:w-full">
+                                            Sermon Gallery
+                                        </h1>
+                                        {selectedTag ? (
+                                            <div className="flex w-full max-w-[523.667px] items-center justify-between gap-2 pt-4">
+                                                <div className="min-w-0 flex-1 truncate text-center text-4xl font-thin sm:text-5xl">
+                                                    #{selectedTag}
+                                                </div>
+                                                <button
+                                                    id="remove-tag-selected"
+                                                    type="button"
+                                                    aria-label="Remove selected tag"
+                                                    className="cursor-pointer border-0 bg-transparent p-0 text-foreground"
+                                                    onClick={clearSelectedTag}
+                                                >
+                                                    <XIcon className="h-10 w-10" strokeWidth={0.5} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <Tabs
+                                                value={type}
+                                                onValueChange={(nextValue) => {
+                                                    setTypeInUrl(parseTabValue(nextValue))
+                                                }}
+                                            >
+                                                <TabsList>
+                                                    <TabsTrigger value="all">All</TabsTrigger>
+                                                    <TabsTrigger value="sermons">
+                                                        Sermons
+                                                    </TabsTrigger>
+                                                    <TabsTrigger value="bible_studies">
+                                                        Bible Studies
+                                                    </TabsTrigger>
+                                                </TabsList>
+                                            </Tabs>
+                                        )}
+                                    </header>
+
+                                    <SettingsSelector />
+                                    <div className="card">
+                                        {loading && (
+                                            <div className="flex justify-center">
+                                                <Spinner />
+                                            </div>
+                                        )}
+                                        <SearchByScripture />
+                                    </div>
+                                </>
+                            }
+                        />
+                        <Route
+                            path="/collections"
+                            element={
+                                <>
+                                    <SettingsSelector />
+                                    <CollectionsPage />
+                                </>
+                            }
+                        />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
                 </SidebarInset>
             </ScriptureSearchProvider>
         </SidebarProvider>
