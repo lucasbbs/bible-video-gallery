@@ -1,9 +1,9 @@
 export const addEnvVars = () =>{
 const root = document.documentElement;
 
-console.log(
-  'VITE_LIGHT_BACKGROUND:',
-  import.meta.env.VITE_LIGHT_BACKGROUND
+root.style.setProperty(
+  '--env-red-400',
+  import.meta.env.VITE_RED_400
 )
 
   root.style.setProperty(

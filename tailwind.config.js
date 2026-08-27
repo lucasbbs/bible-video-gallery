@@ -93,6 +93,11 @@ module.exports = {
       }
     },
     extend: {
+      colors: {
+        red: {
+          400: import.meta.env.VITE_RED_400 || "#c53030",
+        },
+      },
       fontFamily: {
         'font-sans-serif': ['Noto Serif Display', 'serif']
       },
