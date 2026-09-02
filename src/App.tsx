@@ -162,7 +162,7 @@ function App() {
                 onSetSelectedDateRange={setSelectedDateRangeInUrl}
                 onResetPage={resetPageInUrl}
             >
-                <AppSidebar showFilters={location.pathname === '/'} />
+                <AppSidebar />
                 <SidebarInset>
                     <Routes>
                         <Route

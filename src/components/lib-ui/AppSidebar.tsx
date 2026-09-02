@@ -41,10 +41,10 @@ const slugifyTeacherValue = (name: string) =>
   name.trim().toLocaleLowerCase().replace(/\s+/g, "_")
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
-  showFilters?: boolean
+ //
 }
 
-export function AppSidebar({ showFilters = true, ...props }: AppSidebarProps) {
+export function AppSidebar({ ...props }: AppSidebarProps) {
   const { state } = useSidebar()
   const isCollapsed = state === "collapsed"
   const location = useLocation()
@@ -283,6 +283,9 @@ export function AppSidebar({ showFilters = true, ...props }: AppSidebarProps) {
           </div>
         </SidebarHeader>
         <SidebarContent>
+          <SidebarHeader className="font-bold text-gray-300 uppercase py-0">
+            {isCollapsed ? null : "Library"}
+          </SidebarHeader>
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -313,8 +316,11 @@ export function AppSidebar({ showFilters = true, ...props }: AppSidebarProps) {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-          {showFilters ? <SidebarSeparator /> : null}
-          {showFilters ? sidebarFilterOptions.map((filter) => {
+          <SidebarSeparator />
+          <SidebarHeader className="font-bold text-gray-300 uppercase py-0">
+            {isCollapsed ? null : "Filters"}
+          </SidebarHeader>
+          {sidebarFilterOptions.map((filter) => {
             const isOpen = !!openFilters[filter.id]
 
             return (
@@ -334,8 +340,8 @@ export function AppSidebar({ showFilters = true, ...props }: AppSidebarProps) {
                           <filter.Icon />
                         ) : (
                           <>
-                            <span className="flex min-w-0 items-center gap-2">
-                              <filter.Icon />
+                            <filter.Icon />
+                            <span className="flex min-w-0 items-center gap-0">
                               <span className="truncate">{filter.label}</span>
                             </span>
                             {isOpen ? (
@@ -369,7 +375,8 @@ export function AppSidebar({ showFilters = true, ...props }: AppSidebarProps) {
                 </SidebarGroupContent>
               </SidebarGroup>
             )
-          }) : null}
+          })}
+           <SidebarSeparator />
         </SidebarContent>
         <SidebarFooter>
         </SidebarFooter>
