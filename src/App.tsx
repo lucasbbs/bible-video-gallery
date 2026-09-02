@@ -175,7 +175,7 @@ function App() {
                                         </h1>
                                         {selectedTag ? (
                                             <div className="flex w-full max-w-[523.667px] items-center justify-between gap-2 pt-4">
-                                                <div className="min-w-0 flex-1 truncate text-center text-4xl font-thin sm:text-5xl">
+                                                <div className="min-w-0 flex-1 truncate text-center text-4xl font-thin sm:text-5xl min-h-15">
                                                     #{selectedTag}
                                                 </div>
                                                 <button
