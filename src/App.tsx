@@ -92,20 +92,6 @@ function App() {
         [location.pathname, location.search, navigate]
     )
 
-    const setSelectedTagInUrl = useCallback(
-        (nextTag: string | null) => {
-            const nextParams = new URLSearchParams(location.search)
-
-            if (nextTag) nextParams.set('tag', nextTag)
-            else nextParams.delete('tag')
-
-            nextParams.delete('page')
-            const qs = nextParams.toString()
-            navigate(qs ? `${location.pathname}?${qs}` : location.pathname)
-        },
-        [location.pathname, location.search, navigate]
-    )
-
     const setSelectedDateRangeInUrl = useCallback(
         (nextRange: DateRange | undefined) => {
             const nextParams = new URLSearchParams(location.search)
