@@ -21,11 +21,10 @@ function SearchByScripture() {
         page,
         pageSize,
         selectedTag,
-        handleTagChange
     } = useScriptureSearch()
 
     return (
-        <div>
+        <div className="mx-auto w-full max-w-xl">
             <div className="relative !py-6 h-2/4">
                 <div className="grid gap-4">
                     <ListItemAccordionProvider>
@@ -41,6 +40,7 @@ function SearchByScripture() {
                                     key={`${sermon._id}`}
                                     itemId={`${sermon._id}`}
                                     title={sermon.name}
+                                    speaker={sermon.preacher}
                                     createdTime={new Intl.DateTimeFormat(
                                         'en-CA',
                                         {
@@ -53,9 +53,8 @@ function SearchByScripture() {
                                     description={sermon.description}
                                     type={sermon.type}
                                     tags={selectedTag ? [] : sermon.tags}
-                                    onTagClick={handleTagChange}
                                 >
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
                                         {sermon.type ==='sermons' ? <Dialog>
                                             <DialogTrigger asChild>
                                                 <Button

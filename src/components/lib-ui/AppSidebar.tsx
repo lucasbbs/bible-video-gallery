@@ -43,7 +43,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const {
     form,
     books,
-    preacher,
+    speaker,
+    preachers,
     chapters,
     selectedBook,
     selectedChapter,
@@ -52,7 +53,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     type,
     handleBookChange,
     handleChapterChange,
-    handlePreacherChange,
+    handleSpeakerChange,
     handleTestamentChange,
     selectedDateRange,
     setSelectedDateRange
@@ -120,19 +121,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   }, [openFilters])
 
-  const preachers = [
-    {label: 'Bruce Arthur', value: 'bruce_arthur'},
-    {label: 'Jacob Tomc', value: 'jacob_tomc'},
-    {label: 'Guest', value: 'guest'}
-  ]
-
   const isBibleStudies = type === "bible_studies"
   const speakerOptions = isBibleStudies
     ? teachers.map((teacher) => ({
         value: slugifyTeacherValue(teacher.name),
         label: teacher.name,
       }))
-    : preachers
+    : preachers.map((preacher) => ({
+        value: slugifyTeacherValue(preacher.name),
+        label: preacher.name,
+      }))
   const speakerFilterLabel = isBibleStudies
     ? "Search by Teacher"
     : "Search by Preacher"
@@ -202,19 +200,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ],
     },
     {
-      id: "preacher",
+      id: "speaker",
       label: speakerFilterLabel,
       Icon: UserSearchIcon,
       items: [
         {
-          key: "preacher",
+          key: "speaker",
           element: (
             <Selector
               form={form}
               onChange={(value: string) =>
-                handlePreacherChange(value === "all" ? "" : value)
+                handleSpeakerChange(value === "all" ? "" : value)
               }
-              value={preacher || "all"}
+              value={speaker || "all"}
               options={[
                 { value: "all", label: "All" },
                 ...speakerOptions.map((speaker) => ({
@@ -275,6 +273,46 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </div>
         </SidebarHeader>
         <SidebarContent>
+          <SidebarHeader className="font-bold text-gray-300 uppercase py-0">
+            {isCollapsed ? null : "Library"}
+          </SidebarHeader>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === "/"}
+                    tooltip="Sermon Gallery"
+                  >
+                    <Link to="/">
+                      <HomeIcon />
+                      <span>Sermon Gallery</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={
+                      location.pathname === "/collections" ||
+                      location.pathname.startsWith("/collection/")
+                    }
+                    tooltip="Bible Study Collections"
+                  >
+                    <Link to="/collections">
+                      <LibraryBigIcon />
+                      <span>Bible Study Collections</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+          <SidebarSeparator />
+          <SidebarHeader className="font-bold text-gray-300 uppercase py-0">
+            {isCollapsed ? null : "Filters"}
+          </SidebarHeader>
           {sidebarFilterOptions.map((filter) => {
             const isOpen = !!openFilters[filter.id]
 

@@ -1,6 +1,6 @@
-import { Teacher } from "@/types/teacher"
+import { Speaker } from "@/types/speaker"
 
-export class TeacherDTO {
+export class SpeakerDTO {
     name: string
     createdAt?: Date
 
@@ -12,10 +12,10 @@ export class TeacherDTO {
         this.createdAt = createdAt
     }
 
-    static async fromAPI(data: Teacher): Promise<TeacherDTO> {
+    static async fromAPI(data: Speaker): Promise<SpeakerDTO> {
       const createdAtDate = new Date(data.createdAt)
 
-        return new TeacherDTO(
+        return new SpeakerDTO(
             data.name,
             createdAtDate
         )

@@ -8,11 +8,12 @@ import {
 import { useForm } from "react-hook-form"
 
 import { Sermon, SermonDTO } from "@/dtos/sermon.dto"
-import { TeacherDTO } from "@/dtos/teacher.dto"
-import { getTeachers } from "@/services/teachers"
+import { SpeakerDTO } from "@/dtos/speaker.dto"
+import { getSpeakers } from "@/services/speakers"
 import { getBibleChapters, getVideos } from "@/services/videos"
 import { allBooks, newTestament, oldTestament } from "@/shared/books"
 import { DateRange } from "react-day-picker"
+import { SPEAKER_TYPE } from "@/types/speaker"
 
 function formatDateParam(date: Date): string {
   const year = date.getFullYear()
@@ -34,15 +35,16 @@ type ScriptureSearchContextValue = {
   page: number
   pageSize: number
   type: string
-  preacher: string
-  teachers: TeacherDTO[]
+  speaker: string
+  preachers: SpeakerDTO[]
+  teachers: SpeakerDTO[]
   selectedTag: string | null
   selectedDateRange: DateRange | undefined
   setSelectedDateRange: (range: DateRange | undefined) => void
   handleTestamentChange: (value: string) => void
   handleBookChange: (value: string) => void
   handleChapterChange: (value: number) => void
-  handlePreacherChange: (value: string) => void
+  handleSpeakerChange: (value: string) => void
   handleTagChange: (value: string) => void
 }
 
@@ -94,13 +96,14 @@ export function ScriptureSearchProvider({
   const [sermons, setSermons] = useState<SermonDTO[]>([])
   const [showOther, setShowOther] = useState(false)
   const [total, setTotal] = useState(0)
-  const [preacher, setPreacher] = useState('')
-  const [teachers, setTeachers] = useState<TeacherDTO[]>([])
+  const [speaker, setSpeaker] = useState('')
+  const [teachers, setTeachers] = useState<SpeakerDTO[]>([])
+  const [preachers, setPreachers] = useState<SpeakerDTO[]>([])
 
   const resetForm = (optionSelected: string[]) => {
     form.reset()
     setBooks(optionSelected)
-    setPreacher('')
+    setSpeaker('')
     setChapters([])
     setSelectedBook("")
     setSelectedChapter(0)
@@ -139,8 +142,8 @@ export function ScriptureSearchProvider({
     setSelectedChapter(value)
   }
 
-  const handlePreacherChange = (value: string) => {
-    setPreacher(value)
+  const handleSpeakerChange = (value: string) => {
+    setSpeaker(value)
     setSelectedChapter(0)
     setSermons([])
     setTotal(0)
@@ -160,9 +163,33 @@ export function ScriptureSearchProvider({
     : null
   const dateTo = selectedDateRange?.to ? formatDateParam(selectedDateRange.to) : null
 
+    useEffect(() => {
+    setSpeaker('')
+    if (!enabled || type !== SPEAKER_TYPE.SERMONS) {
+      setPreachers([])
+      return
+    }
+
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const nextPreachers = await getSpeakers(SPEAKER_TYPE.SERMONS)
+        if (!cancelled) setPreachers(nextPreachers)
+      } catch (error) {
+        console.error("Failed to load preachers", error)
+        if (!cancelled) setPreachers([])
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [enabled, type])
+
   useEffect(() => {
-    setPreacher('')
-    if (type !== "bible_studies") {
+    setSpeaker('')
+    if (!enabled || type !== SPEAKER_TYPE.BIBLE_STUDIES) {
       setTeachers([])
       return
     }
@@ -171,7 +198,7 @@ export function ScriptureSearchProvider({
 
     ;(async () => {
       try {
-        const nextTeachers = await getTeachers()
+        const nextTeachers = await getSpeakers(SPEAKER_TYPE.BIBLE_STUDIES)
         if (!cancelled) setTeachers(nextTeachers)
       } catch (error) {
         console.error("Failed to load teachers", error)
@@ -223,14 +250,14 @@ export function ScriptureSearchProvider({
           ? selectedTestament
           : null
       const hasFilters =
-        showOther || testament || selectedBook !== "" || preacher !== "" || dateFrom || dateTo || selectedTag ? 1 : 0
+        showOther || testament || selectedBook !== "" || speaker !== "" || dateFrom || dateTo || selectedTag ? 1 : 0
       const {
         data: { videos, total },
       } = await getVideos(
         book,
         page,
         pageSize,
-        preacher,
+        speaker,
         hasFilters,
         type,
         dateFrom,
@@ -243,7 +270,7 @@ export function ScriptureSearchProvider({
       setSermons(videos.map((sermon: Sermon) => SermonDTO.from(sermon)))
       setLoading(false)
     })()
-  }, [page, pageSize, selectedBook, selectedTestament, showOther, setLoading, preacher, type, dateFrom, dateTo, selectedTag, selectedChapter])
+  }, [enabled, page, pageSize, selectedBook, selectedTestament, showOther, setLoading, speaker, type, dateFrom, dateTo, selectedTag, selectedChapter])
 
   const contextValue: ScriptureSearchContextValue = {
     form,
@@ -252,7 +279,8 @@ export function ScriptureSearchProvider({
     selectedChapter,
     selectedBook,
     books,
-    preacher,
+    speaker,
+    preachers,
     teachers,
     selectedTag,
     sermons,
@@ -264,7 +292,7 @@ export function ScriptureSearchProvider({
     handleTestamentChange,
     handleBookChange,
     handleChapterChange,
-    handlePreacherChange,
+    handleSpeakerChange,
     handleTagChange,
     selectedDateRange,
     setSelectedDateRange: onSetSelectedDateRange,

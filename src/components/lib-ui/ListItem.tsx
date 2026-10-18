@@ -8,7 +8,9 @@ import {
 } from 'react'
 import { cn } from '@/lib/utils'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
-import { BookOpen, Calendar, BookMarked, Mic } from 'lucide-react'
+import { BookOpen, Calendar, BookMarked, Mic, UserRound } from 'lucide-react'
+import { Tag } from '@/types/sermons'
+import { useNavigate } from 'react-router'
 
 type ListItemAccordionContextValue = {
     openItemId: string | null
@@ -62,8 +64,9 @@ type CardProps = ComponentProps<typeof Card> & {
     createdTime: string
     type: string
     bibleVerse?: string
-    tags?: string[]
+    tags?: Tag[]
     onTagClick?: (tag: string) => void
+    speaker: string
 }
 
 export function ListItem({
@@ -74,7 +77,7 @@ export function ListItem({
     bibleVerse,
     type,
     tags,
-    onTagClick,
+    speaker,
     ...props
 }: CardProps) {
 
@@ -83,17 +86,38 @@ export function ListItem({
             <CardHeader className="flex flex-col gap-4">
                 <div className="flex w-full flex-col items-start">
                     <CardTitle className="pb-2">{title}</CardTitle>
-                    <div className="flex gap-2">
-                        <Calendar size={18} />
-                        <small>{createdTime}</small>
-                        {bibleVerse && (
-                            <>
-                                <small>{` | `}</small>
-                                <BookOpen size={18} />
-                                <small>{bibleVerse}</small>
-                            </>
-                        )}
-                    </div>
+                        <div className="grid grid-cols-2 mobile:grid-cols-4 gap-2
+                            [&>div:nth-child(even)]:border-l
+                            [&>div:nth-child(even)]:pl-2
+                            mobile:[&>div:not(:first-child)]:border-l
+                            mobile:[&>div:not(:first-child)]:pl-2
+                            border-gray-300"
+                        >
+                            {speaker && (
+                                <div className="flex items-center gap-1">
+                                    <UserRound size={18} />
+                                    <small className="capitalize text-sm whitespace-nowrap">
+                                        {speaker.replace("_", " ")}
+                                    </small>
+                                </div>
+                            )}
+
+                            <div className="flex items-center gap-1">
+                                <Calendar size={18} />
+                                <small className="text-sm whitespace-nowrap">
+                                    {createdTime}
+                                </small>
+                            </div>
+
+                            {bibleVerse && (
+                                <div className="flex items-center gap-1">
+                                    <BookOpen size={18} />
+                                    <small className="text-sm whitespace-nowrap">
+                                        {bibleVerse}
+                                    </small>
+                                </div>
+                            )}
+                        </div>
                     <div>{type === 'sermons' ? <SermonBadge /> : <BibleStudyBadge />}</div>
                 </div>
                 {children ? (
@@ -117,9 +141,8 @@ export function ListItem({
                                 <div className="flex flex-wrap gap-2">
                                     {(tags || []).map(tag => (
                                         <TagViewer
-                                            key={tag}
+                                            key={tag._id}
                                             tag={tag}
-                                            onClick={onTagClick}
                                         />
                                     ))}
                                 </div>
@@ -165,18 +188,17 @@ export function ListItem({
 
 const TagViewer = ({
     tag,
-    onClick
 }: {
-    tag: string
-    onClick?: (tag: string) => void
+    tag: Tag
 }) => {
+    const navigate = useNavigate()
     return (
         <button
             type="button"
             className="mt-2 text-sm"
-            onClick={() => onClick?.(tag)}
+            onClick={() => navigate(`/collection/${tag._id}`)}
         >
-            #{tag}
+            #{tag.title}
         </button>
     )
 }
