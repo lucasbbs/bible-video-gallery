@@ -24,11 +24,14 @@ import {
   CalendarIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  HomeIcon,
+  LibraryBigIcon,
   SearchIcon,
   UserSearchIcon
 } from "lucide-react"
 import ChurchSVG from "@/assets/church.svg"
 import DateRangePicker from "../ui/date-range-picker"
+import { Link, useLocation } from "react-router"
 
 const SIDEBAR_FILTERS_OPEN_KEY = "bible-video-gallery:sidebar-filters-open"
 const LEGACY_SCRIPTURE_OPEN_KEY = "bible-video-gallery:sidebar-scripture-search"
@@ -37,9 +40,14 @@ const LEGACY_PREACHER_OPEN_KEY = "bible-video-gallery:sidebar-preacher-search"
 const slugifyTeacherValue = (name: string) =>
   name.trim().toLocaleLowerCase().replace(/\s+/g, "_")
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+ //
+}
+
+export function AppSidebar({ ...props }: AppSidebarProps) {
   const { state } = useSidebar()
   const isCollapsed = state === "collapsed"
+  const location = useLocation()
   const {
     form,
     books,
@@ -257,7 +265,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   asChild
                   className="h-32 justify-center"
                 >
-                  <a href="#">
+                  <Link to="/" aria-label="Go to the sermon gallery">
                     <img
                       src={ChurchSVG}
                       className={cn(
@@ -266,7 +274,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       )}
                       alt="Bible Video Gallery"
                     />
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -333,8 +341,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           <filter.Icon />
                         ) : (
                           <>
-                            <span className="flex min-w-0 items-center gap-2">
-                              <filter.Icon />
+                            <filter.Icon />
+                            <span className="flex min-w-0 items-center gap-0">
                               <span className="truncate">{filter.label}</span>
                             </span>
                             {isOpen ? (
@@ -369,8 +377,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </SidebarGroup>
             )
           })}
-          <SidebarSeparator />
-
+           <SidebarSeparator />
         </SidebarContent>
         <SidebarFooter>
         </SidebarFooter>

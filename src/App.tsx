@@ -50,7 +50,6 @@ function formatDateParam(date: Date): string {
 
 function App() {
     const [loading, setLoading] = useState(false)
-    const [selectedTag, setSelectedTag] = useState<string | null>(null)
 
     const location = useLocation()
     const navigate = useNavigate()
@@ -62,6 +61,7 @@ function App() {
     const page = parsePositiveInt(searchParams.get('page'), 1)
     const pageSize = parsePositiveInt(searchParams.get('pageSize'), 5)
     const type = parseTabValue(searchParams.get('type'))
+    const selectedTag = searchParams.get('tag')
     const selectedDateRange = useMemo<DateRange | undefined>(() => {
         const from = parseDateParam(searchParams.get('dateFrom'))
         const to = parseDateParam(searchParams.get('dateTo'))
@@ -77,6 +77,20 @@ function App() {
         const qs = nextParams.toString()
         navigate(qs ? `${location.pathname}?${qs}` : location.pathname)
     }, [location.pathname, location.search, navigate])
+
+    const setSelectedTagInUrl = useCallback(
+        (nextTag: string | null) => {
+            const nextParams = new URLSearchParams(location.search)
+
+            if (nextTag) nextParams.set('tag', nextTag)
+            else nextParams.delete('tag')
+
+            nextParams.delete('page')
+            const qs = nextParams.toString()
+            navigate(qs ? `${location.pathname}?${qs}` : location.pathname)
+        },
+        [location.pathname, location.search, navigate]
+    )
 
     const setSelectedTagInUrl = useCallback(
         (nextTag: string | null) => {
@@ -125,13 +139,14 @@ function App() {
             }
         >
             <ScriptureSearchProvider
+                enabled={location.pathname === '/'}
                 setLoading={setLoading}
                 page={page}
                 pageSize={pageSize}
                 type={type}
                 selectedTag={selectedTag}
                 selectedDateRange={selectedDateRange}
-                onSetSelectedTag={setSelectedTag}
+                onSetSelectedTag={setSelectedTagInUrl}
                 onSetSelectedDateRange={setSelectedDateRangeInUrl}
                 onResetPage={resetPageInUrl}
             >

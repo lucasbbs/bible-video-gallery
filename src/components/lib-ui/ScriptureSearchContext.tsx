@@ -63,6 +63,7 @@ export function useScriptureSearch() {
 }
 
 type ScriptureSearchProviderProps = {
+  enabled?: boolean
   setLoading: (loading: boolean) => void
   page: number
   pageSize: number
@@ -76,6 +77,7 @@ type ScriptureSearchProviderProps = {
 }
 
 export function ScriptureSearchProvider({
+  enabled = true,
   setLoading,
   page,
   pageSize,
@@ -209,9 +211,13 @@ export function ScriptureSearchProvider({
     return () => {
       cancelled = true
     }
-  }, [type])
+  }, [enabled, type])
 
   useEffect(() => {
+    if (!enabled) {
+      setChapters([])
+      return
+    }
     if (showOther) {
       setChapters([])
       return
@@ -231,9 +237,14 @@ export function ScriptureSearchProvider({
         setChapters([])
       }
     })()
-  }, [sermons, showOther, selectedBook])
+  }, [enabled, sermons, showOther, selectedBook])
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false)
+      return
+    }
+
     ;(async () => {
       setLoading(true)
       // const book = showOther ? "others" : selectedBook === "" ? null : selectedBook
