@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -9,11 +10,13 @@ import { useForm } from "react-hook-form"
 
 import { Sermon, SermonDTO } from "@/dtos/sermon.dto"
 import { SpeakerDTO } from "@/dtos/speaker.dto"
+import { getCollections } from "@/services/collections"
 import { getSpeakers } from "@/services/speakers"
 import { getBibleChapters, getVideos } from "@/services/videos"
 import { allBooks, newTestament, oldTestament } from "@/shared/books"
 import { DateRange } from "react-day-picker"
 import { SPEAKER_TYPE } from "@/types/speaker"
+import type { BibleStudyCollection } from "@/types/collection"
 
 function formatDateParam(date: Date): string {
   const year = date.getFullYear()
@@ -30,6 +33,9 @@ type ScriptureSearchContextValue = {
   selectedBook: string
   books: string[]
   sermons: SermonDTO[]
+  collections: BibleStudyCollection[]
+  collectionsLoading: boolean
+  collectionsError: string | null
   showOther: boolean
   total: number
   page: number
@@ -46,6 +52,7 @@ type ScriptureSearchContextValue = {
   handleChapterChange: (value: number) => void
   handleSpeakerChange: (value: string) => void
   handleTagChange: (value: string) => void
+  reloadCollections: () => void
 }
 
 const ScriptureSearchContext =
@@ -64,6 +71,7 @@ export function useScriptureSearch() {
 
 type ScriptureSearchProviderProps = {
   enabled?: boolean
+  collectionsEnabled?: boolean
   setLoading: (loading: boolean) => void
   page: number
   pageSize: number
@@ -78,6 +86,7 @@ type ScriptureSearchProviderProps = {
 
 export function ScriptureSearchProvider({
   enabled = true,
+  collectionsEnabled = false,
   setLoading,
   page,
   pageSize,
@@ -96,11 +105,19 @@ export function ScriptureSearchProvider({
   const [selectedBook, setSelectedBook] = useState("")
   const [books, setBooks] = useState<string[]>(allBooks)
   const [sermons, setSermons] = useState<SermonDTO[]>([])
+  const [collections, setCollections] = useState<BibleStudyCollection[]>([])
+  const [collectionsLoading, setCollectionsLoading] = useState(false)
+  const [collectionsError, setCollectionsError] = useState<string | null>(null)
+  const [collectionsReloadKey, setCollectionsReloadKey] = useState(0)
   const [showOther, setShowOther] = useState(false)
   const [total, setTotal] = useState(0)
   const [speaker, setSpeaker] = useState('')
   const [teachers, setTeachers] = useState<SpeakerDTO[]>([])
   const [preachers, setPreachers] = useState<SpeakerDTO[]>([])
+
+  const reloadCollections = useCallback(() => {
+    setCollectionsReloadKey((current) => current + 1)
+  }, [])
 
   const resetForm = (optionSelected: string[]) => {
     form.reset()
@@ -167,7 +184,7 @@ export function ScriptureSearchProvider({
 
     useEffect(() => {
     setSpeaker('')
-    if (!enabled || type !== SPEAKER_TYPE.SERMONS) {
+    if (!enabled || (type !== SPEAKER_TYPE.SERMONS && type !== SPEAKER_TYPE.ALL)) {
       setPreachers([])
       return
     }
@@ -191,7 +208,11 @@ export function ScriptureSearchProvider({
 
   useEffect(() => {
     setSpeaker('')
-    if (!enabled || type !== SPEAKER_TYPE.BIBLE_STUDIES) {
+    const shouldLoadTeachers =
+      collectionsEnabled ||
+      (enabled && type === SPEAKER_TYPE.BIBLE_STUDIES)
+
+    if (!shouldLoadTeachers) {
       setTeachers([])
       return
     }
@@ -211,10 +232,10 @@ export function ScriptureSearchProvider({
     return () => {
       cancelled = true
     }
-  }, [enabled, type])
+  }, [collectionsEnabled, enabled, type])
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled && !collectionsEnabled) {
       setChapters([])
       return
     }
@@ -237,7 +258,7 @@ export function ScriptureSearchProvider({
         setChapters([])
       }
     })()
-  }, [enabled, sermons, showOther, selectedBook])
+  }, [collectionsEnabled, enabled, sermons, showOther, selectedBook])
 
   useEffect(() => {
     if (!enabled) {
@@ -283,6 +304,69 @@ export function ScriptureSearchProvider({
     })()
   }, [enabled, page, pageSize, selectedBook, selectedTestament, showOther, setLoading, speaker, type, dateFrom, dateTo, selectedTag, selectedChapter])
 
+  useEffect(() => {
+    if (!collectionsEnabled) {
+      setCollections([])
+      setCollectionsError(null)
+      setCollectionsLoading(false)
+      return
+    }
+
+    const controller = new AbortController()
+
+    ;(async () => {
+      setCollectionsLoading(true)
+      setCollectionsError(null)
+
+      let book: string | null = null
+      if (showOther) {
+        book = "others"
+      } else if (selectedBook !== "" && selectedBook !== "all") {
+        book = selectedBook
+      }
+
+      const testament =
+        selectedTestament === "old" || selectedTestament === "new"
+          ? selectedTestament
+          : null
+
+      try {
+        const nextCollections = await getCollections(
+          {
+            book,
+            chapter: selectedChapter || null,
+            testament,
+            preacher: speaker || null,
+            dateFrom,
+            dateTo,
+          },
+          controller.signal
+        )
+        setCollections(nextCollections)
+      } catch (error) {
+        if (controller.signal.aborted) return
+        console.error("Failed to load Bible study collections", error)
+        setCollectionsError(
+          "We could not load the collections. Please try again."
+        )
+      } finally {
+        if (!controller.signal.aborted) setCollectionsLoading(false)
+      }
+    })()
+
+    return () => controller.abort()
+  }, [
+    collectionsEnabled,
+    collectionsReloadKey,
+    dateFrom,
+    dateTo,
+    selectedBook,
+    selectedChapter,
+    selectedTestament,
+    showOther,
+    speaker,
+  ])
+
   const contextValue: ScriptureSearchContextValue = {
     form,
     chapters,
@@ -295,6 +379,9 @@ export function ScriptureSearchProvider({
     teachers,
     selectedTag,
     sermons,
+    collections,
+    collectionsLoading,
+    collectionsError,
     showOther,
     total,
     page,
@@ -305,6 +392,7 @@ export function ScriptureSearchProvider({
     handleChapterChange,
     handleSpeakerChange,
     handleTagChange,
+    reloadCollections,
     selectedDateRange,
     setSelectedDateRange: onSetSelectedDateRange,
 

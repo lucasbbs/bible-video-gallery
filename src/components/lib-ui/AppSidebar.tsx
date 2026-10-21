@@ -129,7 +129,8 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
     }
   }, [openFilters])
 
-  const isBibleStudies = type === "bible_studies"
+  const isCollectionsLibrary = location.pathname === "/collections"
+  const isBibleStudies = isCollectionsLibrary || type === "bible_studies"
   const speakerOptions = isBibleStudies
     ? teachers.map((teacher) => ({
         value: slugifyTeacherValue(teacher.name),
@@ -140,7 +141,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
         label: preacher.name,
       }))
   const speakerFilterLabel = isBibleStudies
-    ? "Search by Teacher"
+    ? "Search by Teachers"
     : "Search by Preacher"
   const speakerFormLabel = isBibleStudies ? "Teachers" : "Preachers"
   const speakerPlaceholder = isBibleStudies

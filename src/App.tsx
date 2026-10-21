@@ -126,6 +126,7 @@ function App() {
         >
             <ScriptureSearchProvider
                 enabled={location.pathname === '/'}
+                collectionsEnabled={location.pathname === '/collections'}
                 setLoading={setLoading}
                 page={page}
                 pageSize={pageSize}

@@ -11,5 +11,6 @@ export type SpeakersResponse = {
 
 export enum SPEAKER_TYPE {
   BIBLE_STUDIES = 'bible_studies',
-  SERMONS = 'sermons'
+  SERMONS = 'sermons',
+  ALL = 'all'
 }

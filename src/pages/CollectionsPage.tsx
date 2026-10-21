@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-    BookOpenIcon,
+    // BookOpenIcon,
     ChevronRightIcon,
     RefreshCwIcon
 } from 'lucide-react'
@@ -23,6 +23,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { getCollections } from '@/services/collections'
 import type { BibleStudyCollection } from '@/types/collection'
+import { CollectionArtwork } from '@/components/lib-ui/CollectionArtwork'
 
 const DEFAULT_DESCRIPTION = 'Browse the Bible studies in this collection.'
 
@@ -39,42 +40,42 @@ function getCollectionDescription(collection: BibleStudyCollection) {
     return collection.description?.trim() || DEFAULT_DESCRIPTION
 }
 
-type CollectionArtworkProps = {
-    collection: BibleStudyCollection
-    className?: string
-    iconClassName?: string
-    eager?: boolean
-}
+// type CollectionArtworkProps = {
+//     collection: BibleStudyCollection
+//     className?: string
+//     iconClassName?: string
+//     eager?: boolean
+// }
 
-function CollectionArtwork({
-    collection,
-    className = '',
-    iconClassName = 'size-10',
-    eager = false
-}: CollectionArtworkProps) {
-    const [imageFailed, setImageFailed] = useState(false)
+// function CollectionArtwork({
+//     collection,
+//     className = '',
+//     iconClassName = 'size-10',
+//     eager = false
+// }: CollectionArtworkProps) {
+//     const [imageFailed, setImageFailed] = useState(false)
 
-    if (!collection.featuredImage || imageFailed) {
-        return (
-            <div
-                className={`flex items-center justify-center bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground ${className}`}
-                aria-hidden="true"
-            >
-                <BookOpenIcon className={iconClassName} strokeWidth={1.25} />
-            </div>
-        )
-    }
+//     if (!collection.featuredImage || imageFailed) {
+//         return (
+//             <div
+//                 className={`flex items-center justify-center bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground ${className}`}
+//                 aria-hidden="true"
+//             >
+//                 <BookOpenIcon className={iconClassName} strokeWidth={1.25} />
+//             </div>
+//         )
+//     }
 
-    return (
-        <img
-            src={collection.featuredImage}
-            alt=""
-            loading={eager ? 'eager' : 'lazy'}
-            className={className}
-            onError={() => setImageFailed(true)}
-        />
-    )
-}
+//     return (
+//         <img
+//             src={collection.featuredImage}
+//             alt=""
+//             loading={eager ? 'eager' : 'lazy'}
+//             className={className}
+//             onError={() => setImageFailed(true)}
+//         />
+//     )
+// }
 
 type FeaturedCollectionsProps = {
     collections: BibleStudyCollection[]
@@ -138,7 +139,7 @@ function FeaturedCollections({
                                             collection={collection}
                                             eager={index === 0}
                                             className="absolute inset-0 h-full w-full object-cover"
-                                            iconClassName="size-12 opacity-80"
+                                            iconClassName="size-12"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
                                         <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
@@ -305,7 +306,7 @@ export default function CollectionsPage() {
             setError(null)
 
             try {
-                const nextCollections = await getCollections(controller.signal)
+                const nextCollections = await getCollections({}, controller.signal)
                 setCollections(nextCollections)
                 setActiveIndex(0)
             } catch (nextError) {

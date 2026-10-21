@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
-    BookOpenIcon,
     ChevronRightIcon,
     RefreshCwIcon
 } from 'lucide-react'
 import { Link } from 'react-router'
 
+import { CollectionArtwork } from '@/components/lib-ui/CollectionArtwork'
+import { useScriptureSearch } from '@/components/lib-ui/ScriptureSearchContext'
 import { Button } from '@/components/ui/button'
 import {
     Card,
@@ -21,50 +22,12 @@ import {
     CarouselItem
 } from '@/components/ui/carousel'
 import { Skeleton } from '@/components/ui/skeleton'
-import { getCollections } from '@/services/collections'
 import type { BibleStudyCollection } from '@/types/collection'
 
 const DEFAULT_DESCRIPTION = 'Browse the Bible studies in this collection.'
 
 function getCollectionDescription(collection: BibleStudyCollection) {
     return collection.description?.trim() || DEFAULT_DESCRIPTION
-}
-
-type CollectionArtworkProps = {
-    collection: BibleStudyCollection
-    className?: string
-    iconClassName?: string
-    eager?: boolean
-}
-
-function CollectionArtwork({
-    collection,
-    className = '',
-    iconClassName = 'size-10',
-    eager = false
-}: CollectionArtworkProps) {
-    const [imageFailed, setImageFailed] = useState(false)
-
-    if (!collection.featuredImage || imageFailed) {
-        return (
-            <div
-                className={`flex items-center justify-center bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground ${className}`}
-                aria-hidden="true"
-            >
-                <BookOpenIcon className={iconClassName} strokeWidth={1.25} />
-            </div>
-        )
-    }
-
-    return (
-        <img
-            src={collection.featuredImage}
-            alt=""
-            loading={eager ? 'eager' : 'lazy'}
-            className={className}
-            onError={() => setImageFailed(true)}
-        />
-    )
 }
 
 type FeaturedCollectionsProps = {
@@ -248,38 +211,17 @@ function AllCollections({ collections }: { collections: BibleStudyCollection[] }
 }
 
 export default function CollectionsLibrary() {
-    const [collections, setCollections] = useState<BibleStudyCollection[]>([])
+    const {
+        collections,
+        collectionsLoading: loading,
+        collectionsError: error,
+        reloadCollections: retry
+    } = useScriptureSearch()
     const [activeIndex, setActiveIndex] = useState(0)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-    const [reloadKey, setReloadKey] = useState(0)
-
-    const retry = useCallback(() => {
-        setReloadKey((current) => current + 1)
-    }, [])
 
     useEffect(() => {
-        const controller = new AbortController()
-
-        ;(async () => {
-            setLoading(true)
-            setError(null)
-
-            try {
-                const nextCollections = await getCollections(controller.signal)
-                setCollections(nextCollections)
-                setActiveIndex(0)
-            } catch (nextError) {
-                if (controller.signal.aborted) return
-                console.error('Failed to load Bible study collections', nextError)
-                setError('We could not load the collections. Please try again.')
-            } finally {
-                if (!controller.signal.aborted) setLoading(false)
-            }
-        })()
-
-        return () => controller.abort()
-    }, [reloadKey])
+        setActiveIndex(0)
+    }, [collections])
 
     const activeCollection = collections[activeIndex] ?? collections[0]
 
