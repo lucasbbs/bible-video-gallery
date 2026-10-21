@@ -61,6 +61,7 @@ export function useScriptureSearch() {
 }
 
 type ScriptureSearchProviderProps = {
+  enabled?: boolean
   setLoading: (loading: boolean) => void
   page: number
   pageSize: number
@@ -74,6 +75,7 @@ type ScriptureSearchProviderProps = {
 }
 
 export function ScriptureSearchProvider({
+  enabled = true,
   setLoading,
   page,
   pageSize,
@@ -162,7 +164,7 @@ export function ScriptureSearchProvider({
 
   useEffect(() => {
     setPreacher('')
-    if (type !== "bible_studies") {
+    if (!enabled || type !== "bible_studies") {
       setTeachers([])
       return
     }
@@ -182,9 +184,13 @@ export function ScriptureSearchProvider({
     return () => {
       cancelled = true
     }
-  }, [type])
+  }, [enabled, type])
 
   useEffect(() => {
+    if (!enabled) {
+      setChapters([])
+      return
+    }
     if (showOther) {
       setChapters([])
       return
@@ -204,9 +210,14 @@ export function ScriptureSearchProvider({
         setChapters([])
       }
     })()
-  }, [sermons, showOther, selectedBook])
+  }, [enabled, sermons, showOther, selectedBook])
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false)
+      return
+    }
+
     ;(async () => {
       setLoading(true)
       // const book = showOther ? "others" : selectedBook === "" ? null : selectedBook
@@ -243,7 +254,7 @@ export function ScriptureSearchProvider({
       setSermons(videos.map((sermon: Sermon) => SermonDTO.from(sermon)))
       setLoading(false)
     })()
-  }, [page, pageSize, selectedBook, selectedTestament, showOther, setLoading, preacher, type, dateFrom, dateTo, selectedTag, selectedChapter])
+  }, [enabled, page, pageSize, selectedBook, selectedTestament, showOther, setLoading, preacher, type, dateFrom, dateTo, selectedTag, selectedChapter])
 
   const contextValue: ScriptureSearchContextValue = {
     form,
