@@ -138,7 +138,7 @@ function FeaturedCollections({
                                         <CollectionArtwork
                                             collection={collection}
                                             eager={index === 0}
-                                            className="absolute inset-0 h-full w-full object-cover"
+                                            className="absolute inset-0 h-full w-full object-cover select-none"
                                             iconClassName="size-12"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
@@ -266,7 +266,7 @@ function AllCollections({ collections }: { collections: BibleStudyCollection[] }
                             <div className="aspect-[523/200] w-28 shrink-0 overflow-hidden rounded-lg border bg-muted sm:w-36 lg:w-40">
                                 <CollectionArtwork
                                     collection={collection}
-                                    className="h-full w-full object-cover"
+                                    className="h-full w-full object-cover select-none"
                                     iconClassName="size-6 opacity-80"
                                 />
                             </div>

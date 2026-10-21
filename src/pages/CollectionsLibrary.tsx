@@ -91,15 +91,15 @@ function FeaturedCollections({
                                         <CollectionArtwork
                                             collection={collection}
                                             eager={index === 0}
-                                            className="absolute inset-0 h-full w-full object-cover"
+                                            className="absolute inset-0 h-full w-full object-cover select-none"
                                             iconClassName="size-12 opacity-80"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
                                         <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-                                            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-white/70">
+                                            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-white/70 select-none">
                                                 Bible study collection
                                             </p>
-                                            <h2 className="mt-1 line-clamp-2 text-xl font-semibold leading-tight text-white sm:text-2xl">
+                                            <h2 className="mt-1 line-clamp-2 text-xl font-semibold leading-tight text-white sm:text-2xl select-none">
                                                 {collection.name}
                                             </h2>
                                         </div>
@@ -189,7 +189,7 @@ function AllCollections({ collections }: { collections: BibleStudyCollection[] }
                             <div className="aspect-[523/200] w-28 shrink-0 overflow-hidden rounded-lg border bg-muted sm:w-36 lg:w-40">
                                 <CollectionArtwork
                                     collection={collection}
-                                    className="h-full w-full object-cover"
+                                    className="h-full w-full object-cover select-none"
                                     iconClassName="size-6 opacity-80"
                                 />
                             </div>

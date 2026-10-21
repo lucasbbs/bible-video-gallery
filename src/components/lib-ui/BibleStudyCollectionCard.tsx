@@ -25,7 +25,7 @@ return (
                         <img
                             src={featuredImage}
                             alt=""
-                            className="absolute inset-0 h-full w-full object-cover"
+                            className="absolute inset-0 h-full w-full object-cover select-none"
                             onError={() => setImageFailed(true)}
                         />
                     ) : (
@@ -33,7 +33,7 @@ return (
                              <CollectionArtwork
                                   collection={collection}
                                   eager={eager}
-                                  className="absolute inset-0 h-full w-full object-cover"
+                                  className="absolute inset-0 h-full w-full object-cover select-none"
                                   iconClassName={iconClassName}
                               />
                         </div>
