@@ -1,31 +1,20 @@
 import { useCallback, useMemo, useState } from 'react'
 import './App.css'
-import SearchByScripture from './components/lib-ui/SearchByScripture'
-import Spinner from './components/lib-ui/Spinner'
 import { SettingsSelector } from './components/lib-ui/SettingsSelector'
 import { SidebarInset, SidebarProvider } from './components/ui/sidebar'
 import { AppSidebar } from './components/lib-ui/AppSidebar'
 import { ScriptureSearchProvider } from './components/lib-ui/ScriptureSearchContext'
-import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
 import type { DateRange } from 'react-day-picker'
-import { XIcon } from 'lucide-react'
-import CollectionsPage from './pages/CollectionsPage'
-
-const DEFAULT_TYPE = 'sermons'
-const TYPE_VALUES = ['all', 'sermons', 'bible_studies'] as const
-type TypeValue = (typeof TYPE_VALUES)[number]
+import CollectionsLibrary from './pages/CollectionsLibrary'
+import { parseTabValue } from './lib/utils'
+import SermonsLibrary from './pages/SermonsLibrary'
+import CollectionPage from './pages/CollectionPage'
 
 function parsePositiveInt(value: string | null, fallback: number) {
     const parsed = Number.parseInt(value || '', 10)
     if (!Number.isFinite(parsed) || parsed <= 0) return fallback
     return parsed
-}
-
-function parseTabValue(value: string | null): TypeValue {
-    if (!value) return DEFAULT_TYPE
-    if ((TYPE_VALUES as readonly string[]).includes(value)) return value as TypeValue
-    return DEFAULT_TYPE
 }
 
 function parseDateParam(value: string | null): Date | undefined {
@@ -103,21 +92,6 @@ function App() {
         [location.pathname, location.search, navigate]
     )
 
-    const clearSelectedTag = useCallback(() => {
-        setSelectedTagInUrl(null)
-    }, [setSelectedTagInUrl])
-
-    const setTypeInUrl = useCallback(
-        (nextType: TypeValue) => {
-            const nextParams = new URLSearchParams(location.search)
-            nextParams.set('type', nextType)
-            nextParams.delete('page')
-            const qs = nextParams.toString()
-            navigate(qs ? `${location.pathname}?${qs}` : location.pathname)
-        },
-        [location.pathname, location.search, navigate]
-    )
-
     const setSelectedDateRangeInUrl = useCallback(
         (nextRange: DateRange | undefined) => {
             const nextParams = new URLSearchParams(location.search)
@@ -168,56 +142,12 @@ function App() {
                         <Route
                             path="/"
                             element={
-                                <>
-                                    <header className="sticky top-0 flex h-auto shrink-0 flex-col items-center gap-2 bg-background px-4">
-                                        <h1 className="w-45 text-center text-5xl font-semibold sm:w-full">
-                                            Sermon Gallery
-                                        </h1>
-                                        {selectedTag ? (
-                                            <div className="flex w-full max-w-[523.667px] items-center justify-between gap-2 pt-4">
-                                                <div className="min-w-0 flex-1 truncate text-center text-4xl font-thin sm:text-5xl min-h-15">
-                                                    #{selectedTag}
-                                                </div>
-                                                <button
-                                                    id="remove-tag-selected"
-                                                    type="button"
-                                                    aria-label="Remove selected tag"
-                                                    className="cursor-pointer border-0 bg-transparent p-0 text-foreground"
-                                                    onClick={clearSelectedTag}
-                                                >
-                                                    <XIcon className="h-10 w-10" strokeWidth={0.5} />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <Tabs
-                                                value={type}
-                                                onValueChange={(nextValue) => {
-                                                    setTypeInUrl(parseTabValue(nextValue))
-                                                }}
-                                            >
-                                                <TabsList>
-                                                    <TabsTrigger value="all">All</TabsTrigger>
-                                                    <TabsTrigger value="sermons">
-                                                        Sermons
-                                                    </TabsTrigger>
-                                                    <TabsTrigger value="bible_studies">
-                                                        Bible Studies
-                                                    </TabsTrigger>
-                                                </TabsList>
-                                            </Tabs>
-                                        )}
-                                    </header>
-
-                                    <SettingsSelector />
-                                    <div className="card">
-                                        {loading && (
-                                            <div className="flex justify-center">
-                                                <Spinner />
-                                            </div>
-                                        )}
-                                        <SearchByScripture />
-                                    </div>
-                                </>
+                                <SermonsLibrary
+                                    loading={loading}
+                                    setSelectedTagInUrl={setSelectedTagInUrl}
+                                    selectedTag={selectedTag}
+                                    type={type}
+                                />
                             }
                         />
                         <Route
@@ -225,7 +155,15 @@ function App() {
                             element={
                                 <>
                                     <SettingsSelector />
-                                    <CollectionsPage />
+                                    <CollectionsLibrary />
+                                </>
+                            }
+                        />
+                        <Route
+                            path="/collection/:id"
+                            element={
+                                <>
+                                    <CollectionPage />
                                 </>
                             }
                         />

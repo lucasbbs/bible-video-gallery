@@ -51,7 +51,8 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
   const {
     form,
     books,
-    preacher,
+    speaker,
+    preachers,
     chapters,
     selectedBook,
     selectedChapter,
@@ -60,7 +61,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
     type,
     handleBookChange,
     handleChapterChange,
-    handlePreacherChange,
+    handleSpeakerChange,
     handleTestamentChange,
     selectedDateRange,
     setSelectedDateRange
@@ -128,19 +129,16 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
     }
   }, [openFilters])
 
-  const preachers = [
-    {label: 'Bruce Arthur', value: 'bruce_arthur'},
-    {label: 'Jacob Tomc', value: 'jacob_tomc'},
-    {label: 'Guest', value: 'guest'}
-  ]
-
   const isBibleStudies = type === "bible_studies"
   const speakerOptions = isBibleStudies
     ? teachers.map((teacher) => ({
         value: slugifyTeacherValue(teacher.name),
         label: teacher.name,
       }))
-    : preachers
+    : preachers.map((preacher) => ({
+        value: slugifyTeacherValue(preacher.name),
+        label: preacher.name,
+      }))
   const speakerFilterLabel = isBibleStudies
     ? "Search by Teacher"
     : "Search by Preacher"
@@ -210,19 +208,19 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
       ],
     },
     {
-      id: "preacher",
+      id: "speaker",
       label: speakerFilterLabel,
       Icon: UserSearchIcon,
       items: [
         {
-          key: "preacher",
+          key: "speaker",
           element: (
             <Selector
               form={form}
               onChange={(value: string) =>
-                handlePreacherChange(value === "all" ? "" : value)
+                handleSpeakerChange(value === "all" ? "" : value)
               }
-              value={preacher || "all"}
+              value={speaker || "all"}
               options={[
                 { value: "all", label: "All" },
                 ...speakerOptions.map((speaker) => ({
@@ -304,7 +302,10 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={location.pathname === "/collections"}
+                    isActive={
+                      location.pathname === "/collections" ||
+                      location.pathname.startsWith("/collection/")
+                    }
                     tooltip="Bible Study Collections"
                   >
                     <Link to="/collections">

@@ -1,7 +1,8 @@
 import api from './api'
 import type {
     BibleStudyCollection,
-    CollectionsResponse
+    CollectionResponse,
+    CollectionsLibraryResponse
 } from '@/types/collection'
 
 const COLLECTIONS_PAGE_SIZE = 100
@@ -12,7 +13,7 @@ export async function getCollections(signal?: AbortSignal) {
     let totalPages = 1
 
     do {
-        const { data } = await api.get<CollectionsResponse>('/tags', {
+        const { data } = await api.get<CollectionsLibraryResponse>('/tags', {
             params: {
                 page,
                 per_page: COLLECTIONS_PAGE_SIZE
@@ -26,4 +27,9 @@ export async function getCollections(signal?: AbortSignal) {
     } while (page <= totalPages)
 
     return collections
+}
+
+export const getCollectionById = async (id: string, signal?: AbortSignal) => {
+    const { data } = await api.get<CollectionResponse>(`/tag_by_id/${id}`, { signal })
+    return data
 }

@@ -1,29 +1,6 @@
-type SermonPDFFile = {
-    fileUrl: string
-    internalName?: string
-}
+import { Sermon, SermonType, Tag } from "@/types/sermons"
 
-export type SermonType = 'sermons' | 'bible_studies'
-
-export type Sermon = {
-    uri: string
-    title: string
-    name: string
-    description: string
-    audioUrl: string
-    sermonPdf?: SermonPDFFile | null
-    bulletinPdf?: SermonPDFFile | null
-    book: string
-    chapter: number
-    verses: string
-    videoLink: string
-    type: SermonType
-    _id: string
-    createdTime?: string
-    created_time?: string
-    updatedAt: string
-    tags: string[]
-}
+export type { Sermon } from '@/types/sermons'
 
 export class SermonDTO {
     uri: string
@@ -35,9 +12,10 @@ export class SermonDTO {
     book: string
     chapter: number
     verses: string
+    preacher: string
     videoLink: string
     type: SermonType
-    tags: string[]
+    tags: Tag[]
     _id: string
     createdAt: string
     updatedAt: string
@@ -51,6 +29,7 @@ export class SermonDTO {
         this.book = data.book
         this.chapter = data.chapter
         this.verses = data.verses
+        this.preacher = data.preacher
         this.videoLink = data.videoLink
         this.type = data.type
         this._id = data._id

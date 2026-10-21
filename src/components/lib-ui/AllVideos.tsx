@@ -47,6 +47,7 @@ function AllVideos({ loading, setLoading }: AllVideosProps) {
                             key={sermon.uri}
                             itemId={sermon.uri}
                             title={sermon.name}
+                            speaker={sermon.preacher}
                             description={sermon.description}
                             createdTime={new Intl.DateTimeFormat('en-CA', {
                                     year: 'numeric',

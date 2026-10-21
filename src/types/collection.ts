@@ -1,3 +1,5 @@
+import type { WixFile } from './sermons'
+
 export type BibleStudyCollection = {
     id: string
     name: string
@@ -10,10 +12,39 @@ export type BibleStudyCollection = {
     updatedAt?: string
 }
 
-export type CollectionsResponse = {
+export type CollectionsLibraryResponse = {
     page: number
     per_page: number
     total: number
     total_pages: number
     items: BibleStudyCollection[]
+}
+
+export type CollectionBibleStudy = {
+    id: string
+    collection: string
+    book: string
+    chapter: number
+    verses: string
+    scriptureReferences: Array<{
+        book: string
+        chapter: number
+        verses: string
+    }>
+    name: string
+    preacher?: string
+    description: string
+    videoLink: string
+    audioUrl: string
+    sermonPdf?: WixFile | null
+    bulletinPdf?: WixFile | null
+    createdAt?: string
+    published?: boolean
+    type: 'bible_studies'
+    isBibleStudy: true
+}
+
+export type CollectionResponse = {
+    item: BibleStudyCollection
+    bibleStudies: CollectionBibleStudy[]
 }
